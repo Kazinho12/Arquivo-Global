@@ -12,7 +12,10 @@ import {
   visualStep,
 } from "../src/foundation/features/visual/public";
 import { createPublicWorksRepository } from "../src/foundation/features/catalog/repository";
-import { PublicationControls } from "../src/foundation/features/studio/PublicationControls";
+import {
+  PublicationControls,
+  publicationConfirmation,
+} from "../src/foundation/features/studio/PublicationControls";
 import type { StudioWork } from "../src/foundation/features/studio/types";
 const work = "10000000-0000-0000-0000-000000000001",
   entry = "20000000-0000-0000-0000-000000000001",
@@ -319,6 +322,7 @@ test("C Studio: image-only saved chapter is publishable only with C flag; script
     </MemoryRouter>,
   );
   assert.match(off, /publicação visual aguarda/i);
+  assert.doesNotMatch(off, /Preenche título/);
   const on = renderToStaticMarkup(
     <MemoryRouter>
       <PublicationControls
@@ -331,4 +335,34 @@ test("C Studio: image-only saved chapter is publishable only with C flag; script
   assert.match(on, /Guiões e notas permanecem privados/);
   assert.ok(!on.includes('disabled=""'));
   assert.match(on, />Publicar<\/button>/);
+  const blockedCases: [Partial<StudioWork>, boolean][] = [
+    [{ archivedAt: "2026-11-15" }, false],
+    [{ chapters: [] }, false],
+    [{}, true],
+  ];
+  for (const [changes, dirty] of blockedCases) {
+    const blocked = renderToStaticMarkup(
+      <MemoryRouter>
+        <PublicationControls
+          work={{ ...draft, ...changes }}
+          dirty={dirty}
+          visualPublicationEnabled
+        />
+      </MemoryRouter>,
+    );
+    assert.match(blocked, /disabled=""/);
+  }
+});
+
+test("C confirmation distinguishes visual snapshots from text and never promises public scripts", () => {
+  assert.match(
+    publicationConfirmation(true),
+    /páginas dos capítulos com imagens guardadas/,
+  );
+  assert.match(
+    publicationConfirmation(true),
+    /Guiões e notas permanecem privados/,
+  );
+  assert.doesNotMatch(publicationConfirmation(true), /apenas o guião textual/);
+  assert.match(publicationConfirmation(false), /entradas com texto/);
 });

@@ -250,15 +250,33 @@ function mapRow(
     })),
   };
 }
-function failure(error: { code?: string } | null): never {
+function failure(error: { code?: string; message?: string } | null): never {
   if (error?.code === "40001")
     throw new WorksError(
       "A obra ou a entrada mudou noutro dispositivo. Copia as tuas alterações e recupera a última versão antes de tentar novamente.",
     );
-  if (error?.code === "55000")
+  if (error?.code === "55000") {
+    const messages: Record<string, string> = {
+      "Visual publication is not enabled":
+        "A publicação visual não está disponível para esta obra no serviço. Confirma o formato HQ / Comic ou Mangá e pede à administração para verificar a ativação. As páginas e os guiões continuam privados.",
+      "Visual publication requires F4.2-C/D; images remain private":
+        "O serviço ainda não está preparado para publicação visual. As imagens e os guiões continuam privados. Contacta a administração.",
+      "Restore before publication": "Desarquiva a obra antes de publicar.",
+      "Restore before editing": "Desarquiva a obra antes de editar.",
+      "Restore archived work before editing":
+        "Desarquiva a obra antes de editar.",
+      "Restore the archived work before editing":
+        "Desarquiva a obra antes de editar.",
+      "Withdraw publication before archiving":
+        "Retira a publicação antes de arquivar a obra.",
+      "Upload is in flight":
+        "Existe um envio de imagem em curso. Aguarda a conclusão antes de tentar novamente.",
+    };
     throw new WorksError(
-      "Desarquiva a obra antes de editar ou publicar. Retira a publicação antes de arquivar.",
+      messages[error.message ?? ""] ??
+        "A operação está bloqueada pelo estado atual do serviço ou da obra. Atualiza os dados e tenta novamente; se persistir, contacta a administração.",
     );
+  }
   if (["23514", "23502", "22023", "22P02"].includes(error?.code ?? ""))
     throw new WorksError(
       "Revê título, sinopse, idioma, classificação e entradas com texto válido. A operação não foi aplicada.",
@@ -328,7 +346,10 @@ export function createWorksRepository(
       );
   }
   async function request<T>(
-    operation: () => PromiseLike<{ data: T; error: { code?: string } | null }>,
+    operation: () => PromiseLike<{
+      data: T;
+      error: { code?: string; message?: string } | null;
+    }>,
   ): Promise<T> {
     try {
       const { data, error } = await operation();

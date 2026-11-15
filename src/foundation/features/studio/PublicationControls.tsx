@@ -5,6 +5,11 @@ import { Link } from "react-router-dom";
 import { Button, Modal } from "../../components/ui";
 import { useRemoteWorks } from "./RemoteWorksProvider";
 import type { StudioWork } from "./types";
+export function publicationConfirmation(visual: boolean) {
+  return visual
+    ? "Os metadados e as páginas dos capítulos com imagens guardadas passarão a ser acessíveis a qualquer leitor, incluindo visitantes sem conta. Guiões e notas permanecem privados. A autoria apresentada utiliza os campos públicos do perfil, quando disponíveis."
+    : "Os metadados e as entradas com texto passarão a ser acessíveis a qualquer leitor, incluindo visitantes sem conta. A autoria apresentada utiliza os campos públicos do perfil, quando disponíveis.";
+}
 export function PublicationControls({
   work,
   dirty,
@@ -36,7 +41,7 @@ export function PublicationControls({
       (entry) =>
         entry.title.trim() &&
         (visualModel
-          ? visualPublicationEnabled && Boolean(entry.visualPages?.length)
+          ? Boolean(entry.visualPages?.length)
           : entryText(entry.content ?? "").trim()),
     );
   async function confirm() {
@@ -103,8 +108,8 @@ export function PublicationControls({
       {visualPending && (
         <p className="notice">
           As imagens e a configuração visual permanecem privadas. A publicação
-          visual aguarda a F4.2-C/D; a versão pública anterior, se existir, não
-          é alterada.
+          visual aguarda ativação e validação neste ambiente; a versão pública
+          anterior, se existir, não é alterada.
         </p>
       )}
       {!valid && (
@@ -159,16 +164,9 @@ export function PublicationControls({
         >
           <p>
             {action === "publish"
-              ? "Os metadados e as entradas com texto passarão a ser acessíveis a qualquer leitor, incluindo visitantes sem conta. A autoria apresentada utiliza os campos públicos do perfil, quando disponíveis."
+              ? publicationConfirmation(visualModel)
               : "A obra e os conteúdos deixarão de estar acessíveis por novos pedidos públicos. Os rascunhos são preservados. Cópias já descarregadas não podem ser recuperadas dos leitores."}
           </p>
-          {action === "publish" &&
-            ["HQ / Comic", "Mangá"].includes(work.format) && (
-              <p>
-                Esta publicação disponibiliza apenas o guião textual. Não há
-                imagens ou páginas visuais nesta etapa.
-              </p>
-            )}
           {error && <p role="alert">{error}</p>}
           {remote.saving && <p role="status">A confirmar…</p>}
           <div className="modal-actions">

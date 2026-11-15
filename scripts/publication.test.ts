@@ -224,3 +224,60 @@ test("F3.1 Studio publication uses protected RPC, current revision, validated se
     /teus/,
   );
 });
+
+test("publication state errors distinguish archive, visual activation, upload and unknown blocks", async () => {
+  const cases = [
+    [
+      "Visual publication is not enabled",
+      /publicação visual não está disponível/,
+    ],
+    [
+      "Visual publication requires F4.2-C\/D; images remain private",
+      /ainda não está preparado/,
+    ],
+    ["Restore before publication", /Desarquiva a obra antes de publicar/],
+    ["Restore before editing", /Desarquiva a obra antes de editar/],
+    [
+      "Restore archived work before editing",
+      /Desarquiva a obra antes de editar/,
+    ],
+    [
+      "Restore the archived work before editing",
+      /Desarquiva a obra antes de editar/,
+    ],
+    [
+      "Withdraw publication before archiving",
+      /Retira a publicação antes de arquivar/,
+    ],
+    ["Upload is in flight", /envio de imagem em curso/],
+    ["Unknown internal condition", /estado atual do serviço ou da obra/],
+  ] as const;
+  for (const [message, expected] of cases) {
+    const client = {
+      auth: {
+        getSession: async () => ({
+          data: { session: { access_token: "test" } },
+          error: null,
+        }),
+        getUser: async () => ({ data: { user: { id } }, error: null }),
+      },
+      rpc: () => ({
+        setHeader() {
+          return this;
+        },
+        then: (resolve: any) =>
+          Promise.resolve(
+            resolve({ data: null, error: { code: "55000", message } }),
+          ),
+      }),
+    } as any;
+    const repo = createWorksRepository(client, id);
+    await assert.rejects(
+      repo.editorial!(
+        { id, ownerId: id, persistence: "supabase", revision: 1 } as any,
+        "publish",
+      ),
+      expected,
+    );
+  }
+});
