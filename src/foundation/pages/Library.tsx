@@ -1,3 +1,4 @@
+import { SocialLibrary } from "../features/social/SocialLibrary";
 import { worksRepository } from "../lib/worksRepository";
 import { Modal } from "../components/ui";
 import { useState, useMemo } from "react";
@@ -102,6 +103,7 @@ export function LibraryOverviewPage() {
           </Link>
         </div>
       </header>
+      <SocialLibrary />
 
       {entries.some((entry) => !worksRepository.find(entry.workId)) && (
         <p className="notice">

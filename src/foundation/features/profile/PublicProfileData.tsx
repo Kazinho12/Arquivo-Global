@@ -24,9 +24,11 @@ export function FollowerCount({ id }: { id: string }) {
     };
     refresh();
     window.addEventListener("focus", refresh);
+    window.addEventListener("ag:author-follow", refresh);
     return () => {
       active = false;
       window.removeEventListener("focus", refresh);
+      window.removeEventListener("ag:author-follow", refresh);
     };
   }, [id]);
   return (

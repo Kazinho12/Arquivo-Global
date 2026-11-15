@@ -1,3 +1,4 @@
+import { AuthorFollow } from "../features/social/AuthorFollow";
 import { AvatarEditor, ProfileAvatar } from "../features/profile/AvatarEditor";
 import {
   FollowerCount,
@@ -193,6 +194,7 @@ export function PublicProfilePage() {
           </div>
         </div>
       </header>
+      <AuthorFollow id={profile.id} />
 
       <ProfilePublications key={profile.id} id={profile.id} />
     </div>

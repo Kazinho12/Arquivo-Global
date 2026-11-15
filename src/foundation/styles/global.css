@@ -7051,3 +7051,59 @@ dialog p {
     font-size: 0.85rem;
   }
 }
+
+/* F5.1 scoped community controls; existing theme tokens remain authoritative. */
+.social-panel {
+  max-width: 72rem;
+  margin: 2rem auto;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.social-panel .actions,
+.social-author .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.social-panel textarea {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+.social-comments {
+  padding-inline-start: 1.25rem;
+}
+.social-comments li {
+  margin-block: 1.5rem;
+}
+.social-comment-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.social-metric-preference {
+  padding-block: 1rem;
+  font-size: 0.875rem;
+}
+.social-metric-preference input {
+  margin-inline-end: 0.5rem;
+}
+.social-author {
+  margin-block: 1rem;
+}
+@media (max-width: 600px) {
+  .social-panel {
+    margin-inline: 0.5rem;
+    padding: 1rem;
+  }
+  .social-actions .button {
+    flex: 1 1 10rem;
+  }
+}

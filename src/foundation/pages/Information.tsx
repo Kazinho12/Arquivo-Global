@@ -164,6 +164,14 @@ export function PrivacyPage() {
           ],
         },
         {
+          title: "Interações e biblioteca",
+          paragraphs: [
+            "Quando as interações estão ativas, comentários e respostas em publicações são públicos, com o nome do perfil. As contagens de curtidas e seguidores são públicas; favoritos, obras guardadas e ler depois são privados. Os itens já guardados apenas no navegador não são importados automaticamente para a conta.",
+            "A contagem de leitura é opcional no respetivo controlo. Se a permitires, usa um identificador pseudónimo por até 30 dias para limitar repetições; não é associado à conta. O servidor deriva também uma referência de rede com chave e rotação diária para limitar abuso, sem guardar o endereço IP em claro na base de métricas. Os autores e visitantes veem agregados, não estes identificadores. Desativar o controlo interrompe novos envios e solicita a remoção do identificador deste navegador; não apaga contagens já agregadas.",
+            "Comentários podem ser editados ou removidos pelo seu autor. Uma denúncia pode ser analisada por moderadores autorizados; não existe promessa de resposta ou sanção automática. Remover um comentário preserva o lugar das respostas, sem apresentar o seu texto original.",
+          ],
+        },
+        {
           title: "Serviços que tornam isto possível",
           paragraphs: [
             "O Supabase processa autenticação, perfis e conteúdos guardados. Se escolheres iniciar sessão com Google, esse fornecedor também participa na autenticação. O serviço de fotografias utiliza Cloudflare Workers e R2 para receber e alojar imagens de perfil.",

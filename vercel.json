@@ -2,6 +2,9 @@
   "functions": {
     "api/sitemap.ts": {
       "maxDuration": 30
+    },
+    "api/social-metrics.ts": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

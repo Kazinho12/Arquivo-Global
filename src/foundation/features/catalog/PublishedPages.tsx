@@ -1,3 +1,4 @@
+import { SocialPanel } from "../social/SocialPanel";
 import { PublicVisualReader } from "../visual/PublicVisualReader";
 import { publicVisualReaderEnabled } from "../visual/public";
 import { usePublicationSeo } from "../seo/usePublicationSeo";
@@ -154,6 +155,7 @@ export function PublishedWorkPage() {
           </section>
         </div>
       </article>
+      <SocialPanel workId={work.id} />
     </div>
   );
 }
@@ -186,11 +188,14 @@ export function PublishedReaderPage() {
         </section>
       );
     return (
-      <PublicVisualReader
-        key={`${id}:${capituloId}:${work.lastPublishedAt}`}
-        work={work}
-        chapter={chapter}
-      />
+      <>
+        <PublicVisualReader
+          key={`${id}:${capituloId}:${work.lastPublishedAt}`}
+          work={work}
+          chapter={chapter}
+        />
+        <SocialPanel workId={work.id} entryId={chapter.id} />
+      </>
     );
   }
   const props = {
@@ -203,7 +208,12 @@ export function PublishedReaderPage() {
     showCommunityLinks: false,
   };
   if (work.format === "Poesia")
-    return <PoetryReader key={`${id}:${capituloId}`} {...props} />;
+    return (
+      <>
+        <PoetryReader key={`${id}:${capituloId}`} {...props} />
+        <SocialPanel workId={work.id} entryId={chapter.id} />
+      </>
+    );
   return (
     <>
       {["HQ / Comic", "Mangá"].includes(work.format) && (
@@ -212,6 +222,7 @@ export function PublishedReaderPage() {
         </p>
       )}
       <ProseReader key={`${id}:${capituloId}`} {...props} />
+      <SocialPanel workId={work.id} entryId={chapter.id} />
     </>
   );
 }
