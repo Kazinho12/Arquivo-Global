@@ -1,3 +1,4 @@
+import type { VisualBuffer, VisualSaveInput } from "../visual/types";
 import { notifyPublicCatalog } from "../catalog/events";
 import type { StudioWork } from "./types";
 import type {
@@ -23,6 +24,7 @@ export class WorksController {
   private listeners = new Set<() => void>();
   private generation = 0;
   private active = true;
+  readonly visualBuffers = new Map<string, VisualBuffer>();
   readonly editorBuffers = new Map<
     string,
     {
@@ -47,6 +49,7 @@ export class WorksController {
   stop = () => {
     this.active = false;
     this.editorBuffers.clear();
+    this.visualBuffers.clear();
     this.generation++;
     this.state = {
       works: [],
@@ -111,7 +114,28 @@ export class WorksController {
       (saved) =>
         this.state.works.map((item) => (item.id === saved.id ? saved : item)),
     );
+  saveVisual = (
+    work: StudioWork,
+    entryId: string,
+    entryRevision: number,
+    input: VisualSaveInput,
+  ) =>
+    this.mutate(
+      async () => {
+        if (!this.repository.saveVisual)
+          throw Error("Editor visual indisponível neste serviço.");
+        return this.repository.saveVisual(work, entryId, entryRevision, input);
+      },
+      (saved) =>
+        this.state.works.map((item) => (item.id === saved.id ? saved : item)),
+    );
   private clearBuffers(workId: string, entries?: StudioWork["chapters"]) {
+    for (const [id, buffer] of this.visualBuffers)
+      if (
+        buffer.base.id === workId &&
+        (!entries || !entries.some((entry) => entry.id === id))
+      )
+        this.visualBuffers.delete(id);
     for (const [id, buffer] of this.editorBuffers) {
       if (
         buffer.work.id === workId &&

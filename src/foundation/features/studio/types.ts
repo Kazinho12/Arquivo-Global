@@ -1,3 +1,4 @@
+import type { VisualSettings } from "../visual/types";
 import type { CoverImage } from "../media/covers";
 import type { CoverStyle } from "../../data/covers";
 import type { Chapter } from "../reader/types";
@@ -23,6 +24,7 @@ export interface StudioWork {
   ownerId?: string;
   slug?: string;
   revision?: number;
+  visualSettings?: VisualSettings;
   id: string;
   title: string;
   subtitle?: string;

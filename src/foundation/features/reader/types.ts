@@ -1,6 +1,8 @@
+import type { VisualPage } from "../visual/types";
 export type ReaderMode = "prose" | "poetry" | "comic" | "manga";
 
 export interface Chapter {
+  visualPages?: VisualPage[];
   revision?: number;
   entryType?: "chapter" | "poem" | "visual";
   createdAt?: string;

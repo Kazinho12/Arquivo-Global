@@ -1,4 +1,10 @@
 import {
+  visualEditorEnabled,
+  readVisualSettings,
+  readVisualPages,
+  type VisualSaveInput,
+} from "../visual/types";
+import {
   customCoversEnabled,
   readCoverImage,
   type CoverImage,
@@ -51,6 +57,12 @@ export interface EditorialResult {
   deletedId?: string;
 }
 export interface WorksRepository {
+  saveVisual?(
+    work: StudioWork,
+    entryId: string,
+    entryRevision: number,
+    input: VisualSaveInput,
+  ): Promise<StudioWork>;
   editorial?(
     work: StudioWork,
     action: EditorialAction,
@@ -159,6 +171,7 @@ function mapRow(
   styleEnabled = false,
   v2Enabled = false,
   imagesEnabled = customCoversEnabled,
+  visualEnabled = visualEditorEnabled,
 ): StudioWork {
   if (
     row.owner_id !== ownerId ||
@@ -170,6 +183,9 @@ function mapRow(
     throw new WorksError("A resposta não corresponde às tuas obras.");
   return {
     id: row.id,
+    ...(visualEnabled
+      ? { visualSettings: readVisualSettings(row.visual_settings) }
+      : {}),
     ownerId: row.owner_id,
     archivedAt: row.archived_at ?? null,
     publicId: row.public_id,
@@ -210,6 +226,9 @@ function mapRow(
     updatedAt: row.updated_at,
     chapters: (row.entries ?? []).map((entry: Record<string, any>) => ({
       id: entry.id,
+      ...(visualEnabled
+        ? { visualPages: readVisualPages(entry.visual_pages) }
+        : {}),
       number: entry.position,
       title: entry.title,
       content: entry.content,
@@ -265,6 +284,7 @@ export function createWorksRepository(
   ownerId: string,
   options: CoverStyleOptions = {},
 ): WorksRepository {
+  const visualEnabled = options.visualEditorEnabled ?? visualEditorEnabled;
   const imagesEnabled = options.customCoversEnabled ?? customCoversEnabled;
   const styleEnabled =
     options.coverStyleEnabled ?? coverStylePersistenceEnabled;
@@ -272,6 +292,7 @@ export function createWorksRepository(
     styleEnabled && (options.coverStudioV2Enabled ?? coverStudioV2Enabled);
   const selectedColumns =
     columns +
+    (visualEnabled ? ",visual_settings" : "") +
     (imagesEnabled ? ",cover_image" : "") +
     (styleEnabled ? ",cover_style" : "") +
     (v2Enabled ? ",cover_seed" : "");
@@ -326,7 +347,14 @@ export function createWorksRepository(
         .setHeader("Authorization", `Bearer ${token}`),
     );
     return row
-      ? mapRow(row, ownerId, styleEnabled, v2Enabled, imagesEnabled)
+      ? mapRow(
+          row,
+          ownerId,
+          styleEnabled,
+          v2Enabled,
+          imagesEnabled,
+          visualEnabled,
+        )
       : null;
   }
   async function editorial(
@@ -362,6 +390,7 @@ export function createWorksRepository(
           styleEnabled,
           v2Enabled,
           imagesEnabled,
+          visualEnabled,
         ),
       };
     }
@@ -374,6 +403,52 @@ export function createWorksRepository(
     );
   }
   return {
+    async saveVisual(work, entryId, entryRevision, input) {
+      if (!visualEnabled)
+        throw new WorksError("O editor visual ainda não está ativado.");
+      owned(work);
+      const { db, token } = await authenticated();
+      const key = JSON.stringify([
+        "visual",
+        work.id,
+        work.revision,
+        entryId,
+        entryRevision,
+        input,
+      ]);
+      const operationId =
+        pendingOperations.get(key) ?? globalThis.crypto.randomUUID();
+      pendingOperations.set(key, operationId);
+      const result = await request(() =>
+        db
+          .rpc("save_visual_chapter", {
+            p_work_id: work.id,
+            p_revision: work.revision,
+            p_entry_id: entryId,
+            p_entry_revision: entryRevision,
+            p_title: input.title,
+            p_script: input.script,
+            p_settings: input.settings,
+            p_pages: input.pages,
+            p_operation_id: operationId,
+          })
+          .setHeader("Authorization", `Bearer ${token}`),
+      );
+      if (!result?.work)
+        throw new WorksError(
+          "O servidor não confirmou o capítulo. Preserva as alterações e recupera a revisão atual.",
+        );
+      const saved = mapRow(
+        result.work,
+        ownerId,
+        styleEnabled,
+        v2Enabled,
+        imagesEnabled,
+        visualEnabled,
+      );
+      pendingOperations.delete(key);
+      return saved;
+    },
     editorial,
     async list() {
       const { db, token } = await authenticated();
@@ -428,7 +503,14 @@ export function createWorksRepository(
           .setHeader("Authorization", `Bearer ${token}`),
       );
       if (!row) failure(null);
-      return mapRow(row, ownerId, styleEnabled, v2Enabled, imagesEnabled);
+      return mapRow(
+        row,
+        ownerId,
+        styleEnabled,
+        v2Enabled,
+        imagesEnabled,
+        visualEnabled,
+      );
     },
     async update(work, input) {
       if (
@@ -469,6 +551,20 @@ export function createWorksRepository(
             position: entry.number,
             title: entry.title,
             content: entry.content ?? "",
+            ...(visualEnabled
+              ? {
+                  visual_pages: (entry.visualPages ?? []).map((p) => ({
+                    id: p.id,
+                    asset_id: p.asset.id,
+                    position: p.position,
+                    filename: p.asset.filename,
+                    width: p.asset.width,
+                    height: p.asset.height,
+                    bytes: p.asset.bytes,
+                    mime: p.asset.mime,
+                  })),
+                }
+              : {}),
             entry_type: entry.entryType,
             revision: entry.revision,
             alignment: entry.alignment,
@@ -480,6 +576,7 @@ export function createWorksRepository(
         styleEnabled,
         v2Enabled,
         imagesEnabled,
+        visualEnabled,
       );
     },
     async remove(work) {

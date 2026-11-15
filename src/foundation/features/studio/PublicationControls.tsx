@@ -15,6 +15,9 @@ export function PublicationControls({
   const [action, setAction] = useState<"publish" | "withdraw" | null>(null);
   const [error, setError] = useState("");
   const published = work.status === "published";
+  const visualPending =
+    Boolean(work.visualSettings) ||
+    work.chapters.some((c) => Boolean(c.visualPages?.length));
   const label = published
     ? "Atualizar publicação"
     : work.firstPublishedAt
@@ -88,6 +91,13 @@ export function PublicationControls({
         continuam privadas.
       </p>
       {Boolean(work.archivedAt) && <p>Desarquiva a obra antes de publicar.</p>}
+      {visualPending && (
+        <p className="notice">
+          As imagens e a configuração visual permanecem privadas. A publicação
+          visual aguarda a F4.2-C/D; a versão pública anterior, se existir, não
+          é alterada.
+        </p>
+      )}
       {!valid && (
         <p>
           Preenche título, sinopse, idioma e pelo menos uma entrada com texto
@@ -97,7 +107,11 @@ export function PublicationControls({
       <div className="actions">
         <Button
           disabled={
-            remote.saving || dirty || Boolean(work.archivedAt) || !valid
+            remote.saving ||
+            dirty ||
+            Boolean(work.archivedAt) ||
+            !valid ||
+            visualPending
           }
           onClick={() => {
             setError("");

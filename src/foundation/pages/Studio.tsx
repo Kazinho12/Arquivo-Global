@@ -1,3 +1,5 @@
+import { VisualChapterEditor } from "../features/visual/VisualChapterEditor";
+import { visualEditorEnabled } from "../features/visual/types";
 import { CustomCover } from "../features/media/CustomCover";
 import {
   CoverPicker,
@@ -1077,7 +1079,15 @@ export function WorkManagePage() {
 
   const handleAddChapter = async () => {
     if (isRemote) {
-      const result = await remote.controller?.editorial(work, "add_entry");
+      const result = await remote.controller?.editorial(
+        work,
+        "add_entry",
+        visualEditorEnabled && isVisual
+          ? {
+              title: `${work.visualSettings?.format === "webtoon" ? "Episódio" : "Capítulo"} ${work.chapters.length + 1}`,
+            }
+          : {},
+      );
       const added = result?.work?.chapters.find(
         (entry) => !work.chapters.some((old) => old.id === entry.id),
       );
@@ -1283,7 +1293,11 @@ export function WorkManagePage() {
             {work.mode === "poetry"
               ? "Poemas"
               : isVisual
-                ? "Atos"
+                ? visualEditorEnabled
+                  ? work.visualSettings?.format === "webtoon"
+                    ? "Episódios"
+                    : "Capítulos"
+                  : "Atos"
                 : "Capítulos e Atos"}{" "}
             ({work.chapters.length})
           </h2>
@@ -1494,7 +1508,15 @@ export function PagesEditPage() {
   if (work?.persistence === "supabase") {
     const entry = work.chapters.find((item) => item.id === capituloId);
     if (!entry) return <NotFound />;
-    return <RemoteEntryEditor key={entry.id} work={work} entry={entry} />;
+    return visualEditorEnabled && ["comic", "manga"].includes(work.mode) ? (
+      <VisualChapterEditor
+        key={`${work.ownerId}:${entry.id}`}
+        work={work}
+        entry={entry}
+      />
+    ) : (
+      <RemoteEntryEditor key={entry.id} work={work} entry={entry} />
+    );
   }
   if (!work || !["comic", "manga"].includes(work.mode)) return <NotFound />;
 

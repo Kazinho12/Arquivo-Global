@@ -6754,3 +6754,170 @@ dialog p {
   width: 100%;
   min-width: 0;
 }
+
+/* Private visual editing; no changes to public readers. */
+.visual-workspace {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.visual-editor fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+.visual-chapter-nav {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+.visual-chapter-nav summary {
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.visual-chapter-nav ol {
+  padding-left: 1.2rem;
+}
+.visual-chapter-nav li {
+  padding-block: 0.65rem;
+  overflow-wrap: anywhere;
+}
+.visual-chapter-nav a[aria-current] {
+  text-decoration: underline;
+  font-weight: 700;
+}
+.visual-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+.visual-drop-zone {
+  padding: 1.25rem;
+  margin-block: 1rem;
+  border: 2px dashed var(--border);
+  border-radius: 1rem;
+}
+.visual-drop-zone input {
+  width: 100%;
+  min-width: 0;
+}
+.visual-page-list {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.visual-page-list > li {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 180px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+.visual-page-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.visual-page-info h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.visual-thumb {
+  width: 100%;
+  height: 160px;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+}
+.visual-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.visual-editor .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+.visual-editor progress {
+  max-width: 100%;
+}
+.visual-private-preview {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  margin-block: 1.5rem;
+}
+.visual-full-image {
+  width: 100%;
+  position: relative;
+}
+.visual-full-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.visual-private-preview.paged .visual-full-image {
+  max-height: 75vh;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  aspect-ratio: auto !important;
+  min-height: 200px;
+}
+.visual-private-preview.paged .visual-full-image img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 75vh;
+}
+.visual-private-preview figure {
+  margin: 1rem 0;
+  scroll-margin-top: 100px;
+}
+.visual-private-preview figcaption {
+  padding: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.visual-script {
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+.visual-script summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.visual-editor-main {
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .visual-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .visual-page-list > li {
+    grid-template-columns: 80px minmax(0, 1fr);
+    padding: 0.65rem;
+    gap: 0.75rem;
+  }
+  .visual-thumb {
+    height: 120px;
+  }
+  .visual-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .visual-editor .button {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

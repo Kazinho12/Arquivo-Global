@@ -1,3 +1,4 @@
+import { visualEditorEnabled } from "../visual/types";
 import { RichContent } from "../writing/RichContent";
 import {
   entryText,
@@ -29,7 +30,11 @@ export const entryLabel = (work: StudioWork) =>
   work.mode === "poetry"
     ? "poema"
     : work.mode === "comic" || work.mode === "manga"
-      ? "ato"
+      ? visualEditorEnabled
+        ? work.visualSettings?.format === "webtoon"
+          ? "episódio"
+          : "capítulo"
+        : "ato"
       : "capítulo";
 export const entryPath = (work: StudioWork, entry: Chapter) =>
   `/estudio/obras/${work.id}/${work.mode === "comic" || work.mode === "manga" ? "paginas" : "capitulos"}/${entry.id}/editar`;
