@@ -299,3 +299,87 @@ test("social repository: a changed account cannot execute a stale private action
   );
   assert.equal(requests, 0);
 });
+
+test("metrics: diagnostic distinguishes proof/permissions/content without exposing provider details", async () => {
+  for (const [failure, expected, status] of [
+    [
+      { code: "42501", message: "Server proof required" },
+      "METRICS_PROOF_REJECTED",
+      503,
+    ],
+    [
+      { code: "42501", message: "Public content unavailable" },
+      "METRICS_CONTENT_UNAVAILABLE",
+      404,
+    ],
+    [
+      { code: "42501", message: "permission denied for function" },
+      "METRICS_PERMISSION_DENIED",
+      503,
+    ],
+    [
+      { code: "PGRST202", message: "private provider details" },
+      "METRICS_SCHEMA_UNAVAILABLE",
+      503,
+    ],
+  ] as const) {
+    const handler = createSocialMetricsHandler(env, async () =>
+      Response.json(failure, { status: 401 }),
+    );
+    const response = await handler(metricRequest());
+    assert.equal(response.status, status);
+    const body = await response.json();
+    assert.equal(body.code, expected);
+    assert.ok(!JSON.stringify(body).includes("private provider details"));
+  }
+});
+test("metrics: readiness is readonly, proof-protected and never creates a reader cookie", async () => {
+  let calls = 0;
+  const response = await createSocialMetricsHandler(
+    env,
+    async (input, init) => {
+      calls++;
+      assert.equal(
+        new URL(String(input)).pathname,
+        "/rest/v1/rpc/social_metrics_status",
+      );
+      assert.deepEqual(JSON.parse(String(init?.body)), {
+        p_proof: env.SOCIAL_METRICS_SECRET,
+      });
+      return Response.json({ ready: true });
+    },
+  )(
+    new Request("https://arquivoglobal.vercel.app/api/social-metrics", {
+      headers: {
+        Origin: "https://arquivoglobal.vercel.app",
+        "x-vercel-forwarded-for": "192.0.2.1",
+      },
+    }),
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ready: true });
+  assert.equal(response.headers.get("Set-Cookie"), null);
+  assert.equal(calls, 1);
+});
+test("metrics: legacy anon authentication forwards only the validated public JWT", async () => {
+  const token =
+    "eyJhbGciOiJIUzI1NiJ9." +
+    Buffer.from(JSON.stringify({ role: "anon" })).toString("base64url") +
+    ".fixture";
+  const handler = createSocialMetricsHandler(
+    { ...env, SUPABASE_PUBLISHABLE_KEY: token },
+    async (_input, init) => {
+      assert.equal(
+        new Headers(init?.headers).get("Authorization"),
+        "Bearer " + token,
+      );
+      return Response.json({ counted: false });
+    },
+  );
+  assert.equal((await handler(metricRequest())).status, 200);
+});
+test("social: favorites aggregate is optional before migration and validated after activation", () => {
+  assert.equal(parseSocialState(summary).favorites, undefined);
+  assert.equal(parseSocialState({ ...summary, favorites: 3 }).favorites, 3);
+  assert.throws(() => parseSocialState({ ...summary, favorites: -1 }));
+});

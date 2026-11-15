@@ -17,8 +17,11 @@ export function createSocialMetricsHandler(
       "Content-Type": "application/json",
       "X-Content-Type-Options": "nosniff",
     };
-    const reply = (status: number, message: string) =>
-      new Response(JSON.stringify({ message }), { status, headers });
+    const reply = (
+      status: number,
+      message: string,
+      code = "METRICS_UNAVAILABLE",
+    ) => new Response(JSON.stringify({ message, code }), { status, headers });
     if (request.headers.get("Origin") !== new URL(request.url).origin)
       return reply(403, "Pedido não autorizado.");
     if (request.method === "DELETE") {
@@ -26,9 +29,10 @@ export function createSocialMetricsHandler(
         `${cookieName}=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax`;
       return new Response(null, { status: 204, headers });
     }
-    if (request.method !== "POST") return reply(405, "Método indisponível.");
+    if (!["POST", "GET"].includes(request.method))
+      return reply(405, "Método indisponível.");
     if (
-      request.headers.get("Origin") !== new URL(request.url).origin ||
+      request.method === "POST" &&
       request.headers.get("Content-Type")?.split(";")[0] !== "application/json"
     )
       return reply(403, "Pedido não autorizado.");
@@ -55,6 +59,89 @@ export function createSocialMetricsHandler(
       !isIP(ip)
     )
       return reply(503, "Métricas indisponíveis neste ambiente.");
+    async function rpc(name: string, payload: Record<string, unknown>) {
+      const url = new URL("/rest/v1/rpc/" + name, supabase);
+      if (url.protocol !== "https:" || !url.hostname.endsWith(".supabase.co"))
+        throw Error("Invalid provider");
+      return fetcher(url, {
+        method: "POST",
+        headers: {
+          apikey: key!,
+          "Content-Type": "application/json",
+          ...(publicConfig.ready && publicConfig.legacyAnon
+            ? { Authorization: `Bearer ${key}` }
+            : {}),
+        },
+        body: JSON.stringify(payload),
+        redirect: "error",
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      });
+    }
+    async function rpcFailure(response: Response) {
+      const failure = await response.json().catch(() => null);
+      if (
+        failure?.code === "42501" &&
+        failure.message === "Public content unavailable"
+      )
+        return reply(
+          404,
+          "A publicação já não está disponível para contagem.",
+          "METRICS_CONTENT_UNAVAILABLE",
+        );
+      if (
+        failure?.code === "42501" &&
+        failure.message === "Server proof required"
+      )
+        return reply(
+          503,
+          "A configuração de métricas precisa de validação administrativa.",
+          "METRICS_PROOF_REJECTED",
+        );
+      if (failure?.code === "PGRST202" || failure?.code === "42883")
+        return reply(
+          503,
+          "A função de métricas ainda não está disponível neste ambiente.",
+          "METRICS_SCHEMA_UNAVAILABLE",
+        );
+      if (
+        failure?.code === "42501" ||
+        response.status === 401 ||
+        response.status === 403
+      )
+        return reply(
+          503,
+          "As permissões da integração de métricas precisam de revisão.",
+          "METRICS_PERMISSION_DENIED",
+        );
+      return reply(
+        503,
+        "O serviço de dados não confirmou a contagem.",
+        "METRICS_RPC_FAILED",
+      );
+    }
+    if (request.method === "GET") {
+      try {
+        const response = await rpc("social_metrics_status", {
+          p_proof: secret,
+        });
+        if (!response.ok) return rpcFailure(response);
+        const result = await response.json();
+        if (result?.ready !== true)
+          return reply(
+            503,
+            "Diagnóstico de métricas inválido.",
+            "METRICS_INVALID_RESPONSE",
+          );
+        return new Response(JSON.stringify({ ready: true }), { headers });
+      } catch {
+        return reply(
+          503,
+          "Não foi possível contactar o serviço de métricas.",
+          "METRICS_NETWORK_ERROR",
+        );
+      }
+    }
     const hash = (text: string) =>
       createHmac("sha256", secret).update(text).digest("hex");
     let body: { work?: string; entry?: string | null };
@@ -116,37 +203,23 @@ export function createSocialMetricsHandler(
         `${cookieName}=${value}.${hash(value)}; Path=/; Max-Age=${ttl}; Secure; HttpOnly; SameSite=Lax`;
     }
     try {
-      const url = new URL("/rest/v1/rpc/record_social_view", supabase);
-      if (url.protocol !== "https:" || !url.hostname.endsWith(".supabase.co"))
-        return reply(503, "Métricas indisponíveis.");
-      const response = await fetcher(url, {
-        method: "POST",
-        headers: { apikey: key, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          p_work: body.work,
-          p_entry: body.entry ?? null,
-          p_visitor: hash(
-            "visitor:" +
-              body.work +
-              ":" +
-              (body.entry ?? "work") +
-              ":" +
-              identity,
-          ),
-          p_network: hash(
-            "network:" + new Date(now()).toISOString().slice(0, 10) + ":" + ip,
-          ),
-          p_proof: secret,
-        }),
-        redirect: "error",
-        cache: "no-store",
-        signal: AbortSignal.timeout(8000),
+      const response = await rpc("record_social_view", {
+        p_work: body.work,
+        p_entry: body.entry ?? null,
+        p_visitor: hash(
+          "visitor:" +
+            body.work +
+            ":" +
+            (body.entry ?? "work") +
+            ":" +
+            identity,
+        ),
+        p_network: hash(
+          "network:" + new Date(now()).toISOString().slice(0, 10) + ":" + ip,
+        ),
+        p_proof: secret,
       });
-      if (!response.ok)
-        return reply(
-          response.status === 403 ? 404 : 503,
-          "Não foi possível registar a leitura.",
-        );
+      if (!response.ok) return rpcFailure(response);
       const result = await response.json();
       if (typeof result?.counted !== "boolean")
         return reply(503, "Resposta de métricas inválida.");
@@ -154,7 +227,11 @@ export function createSocialMetricsHandler(
         headers,
       });
     } catch {
-      return reply(503, "Métricas temporariamente indisponíveis.");
+      return reply(
+        503,
+        "Métricas temporariamente indisponíveis.",
+        "METRICS_NETWORK_ERROR",
+      );
     }
   };
 }

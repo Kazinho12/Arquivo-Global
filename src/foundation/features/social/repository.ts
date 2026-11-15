@@ -3,6 +3,7 @@ import { getAuthClient } from "../auth/client";
 import { getPublicClient } from "../catalog/repository";
 export const socialEnabled = import.meta.env?.VITE_ENABLE_SOCIAL === "true";
 export interface SocialState {
+  favorites?: number;
   likes: number;
   comments: number;
   followers: number;
@@ -76,6 +77,11 @@ export function parseSocialState(value: unknown): SocialState {
     ["liked", "following", "saved", "favorite", "later", "can_moderate"].some(
       (k) => typeof v[k as keyof SocialState] !== "boolean",
     )
+  )
+    throw Error("Resposta social inválida.");
+  if (
+    v.favorites !== undefined &&
+    (!Number.isSafeInteger(v.favorites) || v.favorites < 0)
   )
     throw Error("Resposta social inválida.");
   return v;

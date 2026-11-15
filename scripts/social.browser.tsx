@@ -1,3 +1,5 @@
+import Trends from "../src/foundation/pages/Trends";
+import { mapPublishedWork } from "../src/foundation/features/catalog/repository";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
@@ -29,6 +31,7 @@ let state: SocialState,
 function reset() {
   state = {
     likes: 0,
+    favorites: 0,
     comments: 0,
     followers: 0,
     views: 0,
@@ -67,7 +70,10 @@ const repo = {
       state.liked = payload.value;
       state.likes = payload.value ? 1 : 0;
     }
-    if (action === "favorite") state.favorite = payload.value;
+    if (action === "favorite") {
+      state.favorite = payload.value;
+      state.favorites = payload.value ? 1 : 0;
+    }
     if (action === "saved") state.saved = payload.value;
     if (action === "comment") {
       comments.unshift({
@@ -507,6 +513,175 @@ for (const theme of ["light", "dark"])
       like.focus();
       check(document.activeElement === like, "foco indisponível");
     });
+
+await run(
+  "Favoritos exibem agregado público e remoção confirmada",
+  async () => {
+    await mount();
+    check(
+      fixture.textContent?.includes("0 favoritos"),
+      "contador inicial ausente",
+    );
+    await click("Favoritar");
+    check(
+      fixture.textContent?.includes("1 favoritos"),
+      "agregado não atualizou",
+    );
+    await click("Retirar favorito");
+    check(
+      fixture.textContent?.includes("0 favoritos"),
+      "remoção não atualizou",
+    );
+  },
+);
+const rankingWork = mapPublishedWork({
+  id: work,
+  title: "Obra de ranking",
+  slug: "obra-ranking",
+  description: "Sinopse pública",
+  type: "Poesia",
+  tags: [],
+  content_warnings: [],
+  first_published_at: "2026-11-15",
+  last_published_at: "2026-11-15",
+});
+async function mountTrends(repository: any) {
+  await act(async () =>
+    root.render(
+      <MemoryRouter key={crypto.randomUUID()}>
+        <Trends enabled repository={repository} />
+      </MemoryRouter>,
+    ),
+  );
+  await settle();
+}
+const rankedPage = (page = 1) => ({
+  items: [
+    {
+      work: rankingWork,
+      views: 10,
+      likes: 2,
+      favorites: 3,
+      comments: 1,
+      followers: 1,
+      score: 9,
+    },
+  ],
+  total: 13,
+  page,
+  size: 12,
+});
+await run(
+  "Tendências: carregamento real, filtros e paginação partilháveis",
+  async () => {
+    let release!: (v: any) => void;
+    const requested: any[] = [];
+    let initial = true;
+    const repository = {
+      list: async (
+        mode: string,
+        format: string,
+        sensitive: boolean,
+        page: number,
+      ) => {
+        requested.push({ mode, format, sensitive, page });
+        if (initial) {
+          initial = false;
+          return new Promise((r) => (release = r));
+        }
+        return rankedPage(page);
+      },
+    };
+    await mountTrends(repository);
+    check(
+      fixture.textContent?.includes("A carregar tendências"),
+      "sem carregamento",
+    );
+    await act(async () => release(rankedPage()));
+    await settle();
+    check(fixture.textContent?.includes("Obra de ranking"), "obra ausente");
+    for (const mode of ["views", "likes", "favorites", "comments"]) {
+      await act(async () => {
+        const select = fixture.querySelector("select")!;
+        select.value = mode;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await settle();
+      check(requested.at(-1).mode === mode, "filtro errado");
+    }
+    await click("Seguinte");
+    check(requested.at(-1).page === 2, "paginação incorreta");
+    await act(async () => {
+      const select = fixture.querySelectorAll("select")[1];
+      select.value = "Poesia";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await settle();
+    check(
+      requested.at(-1).format === "Poesia" && requested.at(-1).page === 1,
+      "formato não reiniciou página",
+    );
+    await driver({ kind: "viewport", width: 360 });
+    check(
+      document.documentElement.scrollWidth <= window.innerWidth + 1,
+      "ranking transborda no móvel",
+    );
+  },
+);
+await run("Tendências: vazio verdadeiro e erro recuperável", async () => {
+  let failed = true;
+  const repository = {
+    list: async () => {
+      if (failed) throw Error("Falha de rede do ranking");
+      return { items: [], total: 0, page: 1, size: 12 };
+    },
+  };
+  await mountTrends(repository);
+  check(
+    fixture
+      .querySelector('[role="alert"]')
+      ?.textContent?.includes("Falha de rede"),
+    "erro invisível",
+  );
+  failed = false;
+  await click("Tentar novamente");
+  check(
+    fixture.textContent?.includes("Ainda não há obras com interações"),
+    "vazio ausente",
+  );
+  check(
+    !fixture.textContent?.includes("Obra de ranking"),
+    "obra inventada no vazio",
+  );
+});
+await run("Consentimento recusado não agenda nem envia contagens", async () => {
+  localStorage.setItem("ag_social_metrics_optin_v1", "false");
+  const interval = window.setInterval,
+    fetcher = window.fetch;
+  let timers = 0,
+    sends = 0;
+  window.setInterval = ((...args: any[]) => {
+    timers++;
+    return interval(...(args as [any, any]));
+  }) as any;
+  window.fetch = async () => {
+    sends++;
+    return Response.json({ counted: true });
+  };
+  try {
+    await act(async () =>
+      root.render(<ReadingMetric workId={work} onCount={() => {}} />),
+    );
+    await driver({ kind: "key", key: "Tab" });
+    await settle();
+    check(timers === 0 && sends === 0, "envio sem consentimento");
+  } finally {
+    await act(async () => root.render(<></>));
+    window.setInterval = interval;
+    window.fetch = fetcher;
+    localStorage.removeItem("ag_social_metrics_optin_v1");
+  }
+});
 await act(async () => root.unmount());
 document.getElementById("results")!.textContent = JSON.stringify(
   results,

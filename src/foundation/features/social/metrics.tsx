@@ -1,4 +1,21 @@
+class MetricResponseError extends Error {}
 import { useEffect, useState } from "react";
+export function metricFailureMessage(code?: string) {
+  const messages: Record<string, string> = {
+    METRICS_PROOF_REJECTED:
+      "A integração de métricas precisa de validação administrativa (prova recusada).",
+    METRICS_PERMISSION_DENIED:
+      "As permissões da integração de métricas precisam de revisão.",
+    METRICS_SCHEMA_UNAVAILABLE:
+      "As funções de métricas ainda não estão disponíveis neste ambiente.",
+    METRICS_CONTENT_UNAVAILABLE:
+      "Esta publicação já não está disponível para contagem.",
+  };
+  return (
+    (code && Object.hasOwn(messages, code) ? messages[code] : undefined) ??
+    "A contagem de leitura está temporariamente indisponível."
+  );
+}
 const preference = "ag_social_metrics_optin_v1";
 export function ReadingMetric({
   workId,
@@ -43,13 +60,20 @@ export function ReadingMetric({
         cache: "no-store",
       })
         .then(async (r) => {
-          if (!r.ok) throw Error();
+          if (!r.ok) {
+            const failure = await r.json().catch(() => null);
+            throw new MetricResponseError(metricFailureMessage(failure?.code));
+          }
           const result = await r.json();
           if (typeof result.counted !== "boolean") throw Error();
           onCount();
         })
-        .catch(() =>
-          setError("A contagem de leitura está temporariamente indisponível."),
+        .catch((e) =>
+          setError(
+            e instanceof MetricResponseError
+              ? e.message
+              : metricFailureMessage(),
+          ),
         );
     }, 1000);
     return () => {

@@ -183,6 +183,9 @@ function SocialContent({
       {
         [key]: value,
         ...(action === "like" ? { likes: state.likes + (value ? 1 : -1) } : {}),
+        ...(action === "favorite" && typeof state.favorites === "number"
+          ? { favorites: state.favorites + (value ? 1 : -1) }
+          : {}),
         ...(action === "follow"
           ? { followers: state.followers + (value ? 1 : -1) }
           : {}),
@@ -212,10 +215,13 @@ function SocialContent({
       {!loading && state && (
         <>
           <p aria-live="polite">
-            {state.likes} curtidas · {state.comments} comentários ·{" "}
-            {state.followers} seguidores da obra · {state.views}{" "}
-            {entryId ? "leituras" : "visualizações"} · {state.visitors}{" "}
-            visitantes únicos estimados
+            {state.likes} curtidas ·{" "}
+            {state.favorites === undefined
+              ? "Favoritos indisponíveis"
+              : `${state.favorites} favoritos`}{" "}
+            · {state.comments} comentários · {state.followers} seguidores da
+            obra · {state.views} {entryId ? "leituras" : "visualizações"} ·{" "}
+            {state.visitors} visitantes únicos estimados
           </p>
           {!userId && (
             <p>

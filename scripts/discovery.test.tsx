@@ -171,6 +171,6 @@ test("unpopulated formats show empty results without invented works", async () =
 });
 test("retired selection URLs show an empty state without bundled works", async () => {
   const html = await renderRoute("/tendencias?selecao=ag-colecao-comecar");
-  assert.ok(html.includes("Ainda não há tendências disponíveis"));
+  assert.ok(html.includes("Tendências em preparação"));
   assert.ok(!html.includes("Carta de abertura"));
 });
