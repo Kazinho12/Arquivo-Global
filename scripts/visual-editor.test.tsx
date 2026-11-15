@@ -669,7 +669,7 @@ test("repository save/reload uses both revisions and reuses operation ID after a
   await assert.rejects(old.saveVisual!(w!, entry, 2, input));
   assert.equal(operations.length, 2);
 });
-test("publication UI clearly blocks the new visual model while retaining withdrawal and old script semantics", () => {
+test("publication UI blocks visual publication with the reader flag off and preserves private scripts", () => {
   const visual = {
     ...row(),
     id: work,
@@ -687,10 +687,16 @@ test("publication UI clearly blocks the new visual model while retaining withdra
   } as unknown as StudioWork;
   const html = renderToStaticMarkup(
     <MemoryRouter>
-      <PublicationControls work={visual} dirty={false} />
+      <PublicationControls
+        work={visual}
+        dirty={false}
+        visualPublicationEnabled={false}
+      />
     </MemoryRouter>,
   );
-  assert.ok(html.includes("F4.2-C/D"));
+  assert.match(html, /publicação visual aguarda ativação e validação/);
+  assert.match(html, /Guiões e notas permanecem privados/);
+  assert.doesNotMatch(html, /apenas o guião textual/);
   assert.ok(html.includes("disabled"));
   assert.ok(!html.includes("imagens publicadas com sucesso"));
 });
