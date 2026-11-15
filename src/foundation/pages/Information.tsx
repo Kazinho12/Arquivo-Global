@@ -241,7 +241,7 @@ export function PrivacyPage() {
         {
           title: "O que fica no navegador",
           paragraphs: [
-            "A sessão, preferências e dados de leitura podem permanecer neste navegador. As preferências do leitor e a continuidade da leitura são locais e não exigem conta. Dados locais antigos e cópias de recuperação também podem permanecer no dispositivo.",
+            "A sessão, preferências e dados de leitura podem permanecer neste navegador. A leitura anónima mantém continuidade local. Quando a biblioteca avançada estiver disponível, cada conta pode ativar separadamente a sincronização privada do progresso e o histórico, inicialmente desligados. A importação do progresso anónimo exige confirmação. Desligar a sincronização não elimina dados anteriores; os controlos de remoção local e da conta são separados. As preferências tipográficas continuam locais. Dados antigos e cópias de recuperação também podem permanecer no dispositivo.",
             "Limpar o armazenamento pode eliminar esses dados. Terminar sessão não os apaga todos. Protege o acesso ao dispositivo e guarda com cuidado exportações que contenham textos privados.",
           ],
         },
@@ -316,7 +316,7 @@ const questions = [
     category: "Leitura e comunidade",
     title: "Como retomar uma leitura?",
     answer:
-      "O leitor guarda a continuidade localmente, neste navegador. Usa a opção de retomar disponível na obra. Limpar o armazenamento ou mudar de dispositivo pode tornar esse registo indisponível.",
+      "Sem conta, a continuidade fica neste navegador. Quando a biblioteca avançada estiver disponível, podes ativar a sincronização privada nas definições da biblioteca para retomar noutro dispositivo. O progresso antigo deste dispositivo só é importado por confirmação explícita. Em conflitos, escolhe a posição da conta ou confirma o reenvio da posição local. Limpar armazenamento pode eliminar posições ainda não sincronizadas; exporta uma cópia antes.",
     to: "/catalogo",
   },
   {

@@ -1,3 +1,5 @@
+import { point, captureReading } from "../library/readingCache";
+import type { Locator } from "../library/syncRepository";
 import { useEffect, useRef } from "react";
 import type { Chapter, ReaderMode } from "./types";
 import { worksRepository } from "../../lib/worksRepository";
@@ -12,7 +14,8 @@ export function resumeChapter(chapters: Chapter[], savedId?: string) {
 export function savedPosition(workId: string, chapterId: string) {
   const entry = libraryStore.getEntry(workId);
   const position =
-    entry?.lastReadChapterId === chapterId ? entry.lastReadPosition : 0;
+    point(workId, chapterId)?.position ??
+    (entry?.lastReadChapterId === chapterId ? entry.lastReadPosition : 0);
   return typeof position === "number" && Number.isFinite(position)
     ? Math.min(1, Math.max(0, position))
     : 0;
@@ -25,12 +28,20 @@ export function recordReading(input: {
   chapters: Chapter[];
   currentChapter: Chapter;
   position: number;
+  locator?: Locator;
 }) {
   const index = input.chapters.findIndex(
     (chapter) => chapter.id === input.currentChapter.id,
   );
   if (index < 0 || !Number.isFinite(input.position)) return;
   const position = Math.min(1, Math.max(0, input.position));
+  captureReading({
+    work: input.workId,
+    entry: input.currentChapter.id,
+    position,
+    locator: input.locator ?? { kind: input.mode },
+    time: new Date().toISOString(),
+  });
   const existing = libraryStore.getEntry(input.workId);
   const progress = Math.floor(
     ((index + position) / input.chapters.length) * 100,
@@ -84,7 +95,10 @@ export function useReadingProgress(input: {
   useEffect(() => {
     if (!input.enabled) return;
     const position = savedPosition(input.workId, input.currentChapter.id);
-    inScope(owner, () => recordReading({ ...input, position }));
+    const savedLocator = point(input.workId, input.currentChapter.id)?.locator;
+    inScope(owner, () =>
+      recordReading({ ...input, position, locator: savedLocator }),
+    );
     let frame = 0;
     positionRef.current = position;
     const save = (next: number) => {
@@ -93,7 +107,11 @@ export function useReadingProgress(input: {
       pendingSave.current = setTimeout(() => {
         pendingSave.current = undefined;
         inScope(owner, () =>
-          recordReading({ ...latest.current, position: next }),
+          recordReading({
+            ...input,
+            position: next,
+            locator: textLocator(root.current, input.mode),
+          }),
         );
       }, 250);
     };
@@ -135,10 +153,33 @@ export function useReadingProgress(input: {
           );
       });
     }
+    if (!visual) {
+      const anchor = point(input.workId, input.currentChapter.id)?.locator;
+      if (anchor?.block !== undefined) {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const blocks = root.current?.querySelectorAll<HTMLElement>(
+            "p,h1,h2,h3,li,blockquote,pre,.poetry-stanza",
+          );
+          const block = blocks?.[anchor.block!];
+          if (block)
+            window.scrollTo(
+              0,
+              window.scrollY +
+                block.getBoundingClientRect().top +
+                (anchor.offset ?? 0) * Math.max(1, block.offsetHeight),
+            );
+        });
+      }
+    }
     window.addEventListener("scroll", scroll, { passive: true });
     const flush = () =>
       inScope(owner, () =>
-        recordReading({ ...latest.current, position: positionRef.current }),
+        recordReading({
+          ...input,
+          position: positionRef.current,
+          locator: textLocator(root.current, input.mode),
+        }),
       );
     window.addEventListener("pagehide", flush);
     return () => {
@@ -200,5 +241,35 @@ export function useReadingProgress(input: {
       if (input.enabled)
         inScope(owner, () => recordReading({ ...input, position: 1 }));
     },
+  };
+}
+
+export function textLocator(
+  root: HTMLElement | null,
+  kind: Locator["kind"],
+): Locator {
+  const blocks = [
+    ...(root?.querySelectorAll<HTMLElement>(
+      "p,h1,h2,h3,li,blockquote,pre,.poetry-stanza",
+    ) ?? []),
+  ];
+  let block = 0;
+  blocks.forEach((node, i) => {
+    if (node.getBoundingClientRect().top <= window.innerHeight * 0.25)
+      block = i;
+  });
+  const node = blocks[block];
+  return {
+    kind,
+    block,
+    offset: node
+      ? Math.max(
+          0,
+          Math.min(
+            1,
+            -node.getBoundingClientRect().top / Math.max(1, node.offsetHeight),
+          ),
+        )
+      : 0,
   };
 }

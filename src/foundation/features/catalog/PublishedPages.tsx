@@ -1,3 +1,11 @@
+import { ReadingListPicker } from "../library/AdvancedLibrary";
+import {
+  ReadingSession,
+  ReadingWorkVisit,
+  useReadingWork,
+  ChapterReadingIndicator,
+} from "../library/ReadingProvider";
+import { points } from "../library/readingCache";
 import { SocialPanel } from "../social/SocialPanel";
 import { PublicVisualReader } from "../visual/PublicVisualReader";
 import { publicVisualReaderEnabled } from "../visual/public";
@@ -14,6 +22,7 @@ import { NotFound } from "../../pages/States";
 export function PublishedWorkPage() {
   const { id = "" } = useParams();
   const state = usePublishedWork(id);
+  useReadingWork(state.work);
   usePublicationSeo(state.error ? null : state.work, state.loading);
   const { entries } = useLibrary();
   const catalog = usePublicCatalog();
@@ -33,10 +42,17 @@ export function PublishedWorkPage() {
   if (!state.work) return <NotFound />;
   const work = state.work;
   const previous = entries.find((entry) => entry.workId === work.id);
-  const resume = resumeChapter(work.chapters, previous?.lastReadChapterId);
+  const recent = points()
+    .filter((p) => p.work === work.id)
+    .sort((a, b) => b.time.localeCompare(a.time))[0];
+  const resume = resumeChapter(
+    work.chapters,
+    recent?.entry ?? previous?.lastReadChapterId,
+  );
   const visual = work.format === "HQ / Comic" || work.format === "Mangá";
   return (
     <div className="container discovery-page work-page">
+      <ReadingWorkVisit work={work} />
       <nav>
         <Link to="/catalogo">← Catálogo público</Link>
       </nav>
@@ -114,20 +130,22 @@ export function PublishedWorkPage() {
                 className="button primary"
                 to={`/obras/${work.id}/capitulos/${resume.id}`}
               >
-                {previous?.lastReadChapterId === resume.id
+                {(recent?.entry ?? previous?.lastReadChapterId) === resume.id
                   ? "Retomar leitura"
                   : "Começar leitura"}
                 : {resume.title}
               </Link>
-              {previous && previous.lastReadChapterId !== resume.id && (
-                <p>
-                  O capítulo guardado já não está nesta edição. Podes começar
-                  pela primeira entrada disponível.
-                </p>
-              )}
+              {(recent || previous) &&
+                (recent?.entry ?? previous?.lastReadChapterId) !==
+                  resume.id && (
+                  <p>
+                    O capítulo guardado já não está nesta edição. Podes começar
+                    pela primeira entrada disponível.
+                  </p>
+                )}
               <p>
-                A continuidade fica apenas neste navegador, no contexto local
-                atual. Não é enviada ao Supabase.
+                A continuidade local é preservada. A sincronização privada entre
+                dispositivos é opcional e pode ser gerida na biblioteca.
               </p>
             </div>
           )}
@@ -147,7 +165,8 @@ export function PublishedWorkPage() {
               {work.chapters.map((entry) => (
                 <li key={entry.id}>
                   <Link to={`/obras/${work.id}/capitulos/${entry.id}`}>
-                    {entry.number}. {entry.title}
+                    {entry.number}. {entry.title}{" "}
+                    <ChapterReadingIndicator work={work.id} entry={entry.id} />
                   </Link>
                 </li>
               ))}
@@ -160,6 +179,7 @@ export function PublishedWorkPage() {
           Denunciar esta obra
         </Link>
       </p>
+      <ReadingListPicker work={work.id} />
       <SocialPanel workId={work.id} />
     </div>
   );
@@ -194,11 +214,13 @@ export function PublishedReaderPage() {
       );
     return (
       <>
-        <PublicVisualReader
-          key={`${id}:${capituloId}:${work.lastPublishedAt}`}
-          work={work}
-          chapter={chapter}
-        />
+        <ReadingSession work={work} chapter={chapter.id}>
+          <PublicVisualReader
+            key={`${id}:${capituloId}:${work.lastPublishedAt}`}
+            work={work}
+            chapter={chapter}
+          />
+        </ReadingSession>
         <SocialPanel workId={work.id} entryId={chapter.id} />
       </>
     );
@@ -215,7 +237,9 @@ export function PublishedReaderPage() {
   if (work.format === "Poesia")
     return (
       <>
-        <PoetryReader key={`${id}:${capituloId}`} {...props} />
+        <ReadingSession work={work} chapter={chapter.id}>
+          <PoetryReader key={`${id}:${capituloId}`} {...props} />
+        </ReadingSession>
         <SocialPanel workId={work.id} entryId={chapter.id} />
       </>
     );
@@ -226,7 +250,9 @@ export function PublishedReaderPage() {
           Leitura do guião textual · sem imagens nesta edição
         </p>
       )}
-      <ProseReader key={`${id}:${capituloId}`} {...props} />
+      <ReadingSession work={work} chapter={chapter.id}>
+        <ProseReader key={`${id}:${capituloId}`} {...props} />
+      </ReadingSession>
       <SocialPanel workId={work.id} entryId={chapter.id} />
     </>
   );

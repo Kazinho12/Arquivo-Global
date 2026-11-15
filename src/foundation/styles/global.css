@@ -7181,3 +7181,60 @@ dialog p {
     grid-template-columns: 1fr;
   }
 }
+
+/* Private library and continuity reuse the platform theme tokens. */
+.reading-sync-panel {
+  padding: 1rem;
+  margin-block: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.reading-sync-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding-block: 0.5rem;
+}
+.reading-sync-panel label,
+.library-sync-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-block: 0.6rem;
+}
+.reading-sync-panel label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+}
+.library-sync-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.reading-sync-panel input:not([type="checkbox"]),
+.reading-sync-panel textarea,
+.reading-sync-panel select,
+.library-sync-filters input,
+.library-sync-filters select {
+  width: 100%;
+  min-width: 0;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.65rem;
+  border-radius: 0.35rem;
+}
+.reading-indicator {
+  font-size: 0.85em;
+  color: var(--muted);
+}
+.reading-sync-panel .actions {
+  flex-wrap: wrap;
+}
+.reading-sync-panel button:focus-visible,
+.reading-sync-panel a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

@@ -1,3 +1,4 @@
+import { ReadingProvider } from "../features/library/ReadingProvider";
 import { AdminSessionBridge } from "../features/center/AdminSessionBridge";
 import { RemoteWorksProvider } from "../features/studio/RemoteWorksProvider";
 import { PreferenceEffects } from "../features/preferences/store";
@@ -62,7 +63,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <AuthProvider>
           <AdminSessionBridge />
           <LocalDataBoundary>
-            <RemoteWorksProvider>{children}</RemoteWorksProvider>
+            <ReadingProvider>
+              <RemoteWorksProvider>{children}</RemoteWorksProvider>
+            </ReadingProvider>
           </LocalDataBoundary>
         </AuthProvider>
         <div className="toast-region" role="status" aria-live="polite">

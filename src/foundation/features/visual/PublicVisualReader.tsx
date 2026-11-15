@@ -1,3 +1,4 @@
+import { point } from "../library/readingCache";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Select } from "../../components/ui";
@@ -100,10 +101,27 @@ export function PublicVisualReader({
     [repository],
   );
   const settings = work.visualSettings!;
+  const saved = point(work.id, chapter.id);
   const total = chapter.publicVisualPageCount ?? 0;
-  const [mode, setMode] = useState(settings.mode),
-    [direction, setDirection] = useState(settings.direction),
-    [current, setCurrent] = useState(0);
+  const [mode, setMode] = useState(
+      saved?.locator.vertical === undefined
+        ? settings.mode
+        : saved.locator.vertical
+          ? "vertical"
+          : "paged",
+    ),
+    [direction, setDirection] = useState(
+      saved?.locator.direction ?? settings.direction,
+    ),
+    [current, setCurrent] = useState(
+      Math.max(
+        0,
+        Math.min(
+          total - 1,
+          saved?.locator.page ?? Math.floor((saved?.position ?? 0) * total),
+        ),
+      ),
+    );
   const [fit, setFit] = useState<"width" | "height">("width"),
     [zoom, setZoom] = useState(100),
     [immersive, setImmersive] = useState(false),
@@ -112,7 +130,12 @@ export function PublicVisualReader({
     [loading, setLoading] = useState(false),
     [error, setError] = useState(""),
     [unavailable, setUnavailable] = useState(false),
-    [end, setEnd] = useState(PUBLIC_VISUAL_BATCH),
+    [end, setEnd] = useState(
+      Math.max(
+        PUBLIC_VISUAL_BATCH,
+        Math.ceil((current + 1) / PUBLIC_VISUAL_BATCH) * PUBLIC_VISUAL_BATCH,
+      ),
+    ),
     [revision, setRevision] = useState(0);
   const pending = useRef(new Set<number>()),
     loaded = useRef(new Set<number>()),
@@ -120,6 +143,34 @@ export function PublicVisualReader({
     sentinel = useRef<HTMLDivElement>(null),
     reader = useRef<HTMLDivElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
+  const restored = useRef(false);
+  const restoreTarget = useRef({
+    page: current,
+    offset: saved?.locator.offset ?? 0,
+  });
+  useEffect(() => {
+    if (
+      restored.current ||
+      mode !== "vertical" ||
+      !pages.has(restoreTarget.current.page)
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      const node = reader.current?.querySelector<HTMLElement>(
+        `[data-reader-page="${restoreTarget.current.page + 1}"]`,
+      );
+      if (node) {
+        restored.current = true;
+        window.scrollTo(
+          0,
+          window.scrollY +
+            node.getBoundingClientRect().top +
+            restoreTarget.current.offset * node.offsetHeight,
+        );
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pages, mode]);
   const scope = currentScope();
   useEffect(() => {
     if (!immersive) return;
@@ -155,23 +206,28 @@ export function PublicVisualReader({
   }, [immersive]);
   useEffect(() => {
     if (mode !== "vertical" || !pages.has(current) || unavailable) return;
-    const timer = setTimeout(
-      () =>
-        inScope(scope, () =>
-          recordReading({
-            workId: work.id,
-            workTitle: work.title,
-            author: work.author,
-            chapters: work.chapters,
-            currentChapter: chapter,
-            mode: work.format === "Mangá" ? "manga" : "comic",
-            position: (current + 1) / Math.max(total, 1),
-          }),
-        ),
-      250,
-    );
-    return () => clearTimeout(timer);
-  }, [mode, current, pages, scope, unavailable, work, chapter, total]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const save = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => record(current), 250);
+    };
+    save();
+    window.addEventListener("scroll", save, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", save);
+      if (timer) clearTimeout(timer);
+    };
+  }, [
+    mode,
+    current,
+    pages,
+    scope,
+    unavailable,
+    work,
+    chapter,
+    total,
+    direction,
+  ]);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -310,6 +366,27 @@ export function PublicVisualReader({
     return () => observer.disconnect();
   }, [mode, pages, immersive]);
   function record(index: number) {
+    const node = reader.current?.querySelector<HTMLElement>(
+      `[data-reader-page="${index + 1}"]`,
+    );
+    const offset = node
+      ? Math.max(
+          0,
+          Math.min(
+            1,
+            -node.getBoundingClientRect().top / Math.max(1, node.offsetHeight),
+          ),
+        )
+      : 0;
+    const position =
+      mode === "vertical"
+        ? index === total - 1 &&
+          node &&
+          node.getBoundingClientRect().bottom <= window.innerHeight
+          ? 1
+          : (index + offset) / Math.max(total, 1)
+        : (index + 1) / Math.max(total, 1);
+
     inScope(scope, () =>
       recordReading({
         workId: work.id,
@@ -318,7 +395,20 @@ export function PublicVisualReader({
         chapters: work.chapters,
         currentChapter: chapter,
         mode: work.format === "Mangá" ? "manga" : "comic",
-        position: (index + 1) / Math.max(total, 1),
+        position,
+        locator: {
+          kind:
+            settings.format === "webtoon"
+              ? "webtoon"
+              : work.format === "Mangá"
+                ? "manga"
+                : "comic",
+          page: index,
+          offset,
+          pageId: pages.get(index)?.id,
+          direction,
+          vertical: mode === "vertical",
+        },
       }),
     );
   }

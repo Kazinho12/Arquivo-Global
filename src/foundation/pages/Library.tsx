@@ -1,8 +1,11 @@
+import { readingSyncEnabled } from "../features/library/syncRepository";
+import { AdvancedLibrary } from "../features/library/AdvancedLibrary";
+import { useAuth } from "../features/auth/AuthProvider";
 import { SocialLibrary } from "../features/social/SocialLibrary";
 import { worksRepository } from "../lib/worksRepository";
 import { Modal } from "../components/ui";
-import { useState, useMemo } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo, type ReactNode } from "react";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   BookOpen,
   Heart,
@@ -39,7 +42,7 @@ function getReaderLink(entry: LibraryEntry) {
 }
 
 // 1. Library Overview Page: /biblioteca
-export function LibraryOverviewPage() {
+function LocalLibraryOverviewPage() {
   const { entries, store } = useLibrary();
   const [activeTab, setActiveTab] = useState<LibraryTab>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -386,7 +389,7 @@ export function LibraryOverviewPage() {
 }
 
 // 2. Favorites Page: /biblioteca/favoritos
-export function FavoritesPage() {
+function LocalFavoritesPage() {
   const { entries, store } = useLibrary();
   const favorites = entries.filter((e) => e.isFavorite);
 
@@ -493,7 +496,7 @@ export function FavoritesPage() {
 }
 
 // 3. History Page: /biblioteca/historico
-export function HistoryPage() {
+function LocalHistoryPage() {
   const { entries, store } = useLibrary();
   const historyEntries = entries
     .filter((e) => e.lastReadAtIso || e.progress > 0)
@@ -610,7 +613,7 @@ export function HistoryPage() {
 }
 
 // 4. Reading Lists Overview Page: /biblioteca/listas
-export function ListsPage() {
+function LocalListsPage() {
   const { lists, store } = useLibrary();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [listTitle, setListTitle] = useState("");
@@ -763,7 +766,7 @@ export function ListsPage() {
 }
 
 // 5. Reading List Detail Page: /biblioteca/listas/:id
-export function ListDetailPage() {
+function LocalListDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { lists, entries, store } = useLibrary();
@@ -884,5 +887,60 @@ export function ListDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function LibraryScope({ children }: { children: ReactNode }) {
+  const { state } = useAuth();
+  const location = useLocation();
+  const local = new URLSearchParams(location.search).get("local") === "1";
+  if (readingSyncEnabled && state.user) {
+    if (!local) return <AdvancedLibrary />;
+    return (
+      <>
+        <p className="container notice">
+          Vista local anterior; qualquer secção da conta é identificada
+          separadamente. Nenhuma lista antiga é importada automaticamente.{" "}
+          <Link to="/biblioteca">Voltar à biblioteca da conta</Link>
+        </p>
+        {children}
+      </>
+    );
+  }
+  return <>{children}</>;
+}
+export function LibraryOverviewPage() {
+  return (
+    <LibraryScope>
+      <LocalLibraryOverviewPage />
+    </LibraryScope>
+  );
+}
+export function FavoritesPage() {
+  return (
+    <LibraryScope>
+      <LocalFavoritesPage />
+    </LibraryScope>
+  );
+}
+export function HistoryPage() {
+  return (
+    <LibraryScope>
+      <LocalHistoryPage />
+    </LibraryScope>
+  );
+}
+export function ListsPage() {
+  return (
+    <LibraryScope>
+      <LocalListsPage />
+    </LibraryScope>
+  );
+}
+export function ListDetailPage() {
+  return (
+    <LibraryScope>
+      <LocalListDetailPage />
+    </LibraryScope>
   );
 }
