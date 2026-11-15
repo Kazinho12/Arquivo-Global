@@ -7107,3 +7107,77 @@ dialog p {
     flex: 1 1 10rem;
   }
 }
+
+/* F5.2 institutional/account panels share the existing tokens and button focus. */
+.center-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.center-grid dd {
+  margin: 0.5rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.center-form {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.center-form textarea,
+.center-member textarea {
+  width: 100%;
+  min-height: 7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+.center-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.center-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.center-list > li,
+.center-item {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.center-campaign-image {
+  max-width: min(100%, 16rem);
+  max-height: 24rem;
+  object-fit: contain;
+}
+.center-admin .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+.center-admin,
+.center-member {
+  overflow-wrap: anywhere;
+}
+.center-admin input[type="checkbox"],
+.center-member input[type="checkbox"] {
+  margin-inline-end: 0.5rem;
+}
+@media (max-width: 600px) {
+  .center-admin .actions .button {
+    flex: 1 1 9rem;
+  }
+  .center-grid {
+    grid-template-columns: 1fr;
+  }
+}

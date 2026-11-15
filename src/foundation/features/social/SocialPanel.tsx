@@ -454,6 +454,9 @@ function SocialContent({
                       >
                         Denunciar
                       </Button>
+                      <Link to={`/denunciar?tipo=comment&id=${c.id}`}>
+                        Denúncia detalhada e acompanhamento
+                      </Link>
                       {state.can_moderate && (
                         <Button
                           variant="ghost"

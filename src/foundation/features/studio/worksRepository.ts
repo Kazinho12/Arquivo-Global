@@ -281,6 +281,13 @@ function failure(error: { code?: string; message?: string } | null): never {
     throw new WorksError(
       "Revê título, sinopse, idioma, classificação e entradas com texto válido. A operação não foi aplicada.",
     );
+  if (
+    error?.code === "42501" &&
+    error.message === "Publication restricted by administration"
+  )
+    throw new WorksError(
+      "Esta publicação está restringida por decisão administrativa. Consulta as notificações e pede revisão no suporte.",
+    );
   if (error?.code === "42501")
     throw new WorksError(
       "Sem permissão para esta operação. Confirma a sessão e tenta novamente.",

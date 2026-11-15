@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+  createCenterRepository,
+  type CenterItem,
+} from "../features/center/repository";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Mail, PenLine, Shield } from "lucide-react";
 import { SearchField } from "../components/ui";
@@ -14,6 +18,11 @@ const related = [
   ["/regras", "Regras da Comunidade"],
   ["/privacidade", "Política de Privacidade"],
   ["/contacto", "Contacto Institucional"],
+  ["/suporte", "Suporte"],
+  ["/termos", "Termos de Utilização"],
+  ["/direitos-autor", "Direitos de Autor"],
+  ["/contestacao", "Contestação de moderação"],
+  ["/transparencia", "Transparência"],
 ];
 function InstitutionalNav() {
   return (
@@ -32,12 +41,32 @@ function DocumentPage({
   description,
   sections,
   note,
+  policySlug,
 }: {
   title: string;
   description: string;
   sections: Section[];
   note?: string;
+  policySlug?: string;
 }) {
+  const repo = useMemo(() => createCenterRepository(), []);
+  const [policy, setPolicy] = useState<CenterItem | null>(null),
+    [policyError, setPolicyError] = useState("");
+  useEffect(() => {
+    if (!policySlug) return;
+    let active = true;
+    repo.publicItems("policy", policySlug).then(
+      (items) => {
+        if (active) setPolicy(items[0] ?? null);
+      },
+      (e) => {
+        if (active) setPolicyError(e.message);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [repo, policySlug]);
   return (
     <CompletionPage
       eyebrow="ARQUIVO GLOBAL · UM ESPAÇO PARA CRIAR"
@@ -45,8 +74,20 @@ function DocumentPage({
       description={description}
     >
       <InstitutionalNav />
+      {policySlug && !policy && (
+        <aside className="notice" role="note">
+          Minuta para revisão jurídica e institucional. Não é apresentada como
+          política aprovada. A autorização de publicação de uma versão revista é
+          necessária.
+        </aside>
+      )}
+      {policyError && (
+        <p role="status">
+          {policyError} O texto abaixo permanece identificado como minuta.
+        </p>
+      )}
       <div className="completion-document institutional-document">
-        <nav aria-label={`Índice: ${title}`}>
+        <nav aria-label={`Índice: ${title}`} hidden={!!policy}>
           <h2>Nesta página</h2>
           {sections.map((s, i) => (
             <a href={`#section-${i}`} key={s.title}>
@@ -55,14 +96,24 @@ function DocumentPage({
           ))}
         </nav>
         <article>
-          {sections.map((s, i) => (
-            <section id={`section-${i}`} key={s.title}>
-              <h2>{s.title}</h2>
-              {s.paragraphs.map((p) => (
-                <p key={p}>{p}</p>
-              ))}
+          {policy ? (
+            <section>
+              <h2>Versão publicada pela administração</h2>
+              <p className="center-text">{policy.body}</p>
+              <time dateTime={policy.updated_at}>
+                {new Date(policy.updated_at).toLocaleString("pt-PT")}
+              </time>
             </section>
-          ))}
+          ) : (
+            sections.map((s, i) => (
+              <section id={`section-${i}`} key={s.title}>
+                <h2>{s.title}</h2>
+                {s.paragraphs.map((p) => (
+                  <p key={p}>{p}</p>
+                ))}
+              </section>
+            ))
+          )}
           <section>
             <h2>Estamos à escuta</h2>
             <p>
@@ -86,6 +137,7 @@ function DocumentPage({
 export function RulesPage() {
   return (
     <DocumentPage
+      policySlug="regras"
       title="Regras da Comunidade"
       description="Liberdade para imaginar. Respeito para partilhar. Um compromisso que construímos contigo."
       sections={[
@@ -130,7 +182,7 @@ export function RulesPage() {
         {
           title: "Consequências de violações",
           paragraphs: [
-            "Uma violação destas regras pode exigir análise e uma resposta adequada ao caso. Não existe um sistema automatizado de sanções ou um procedimento formal de recurso implementado. Não prometemos medidas automáticas nem prazos de resolução; esclarecimentos podem ser pedidos pelo email institucional.",
+            "Uma violação destas regras pode exigir análise e uma resposta adequada ao caso. As decisões são analisadas por administradores autorizados e podem ser comunicadas às partes. É possível solicitar revisão no suporte, indicando o processo relacionado. Não prometemos sanções automáticas nem prazos de resolução.",
           ],
         },
         {
@@ -146,6 +198,7 @@ export function RulesPage() {
 export function PrivacyPage() {
   return (
     <DocumentPage
+      policySlug="privacidade"
       title="Política de Privacidade"
       description="Queremos que compreendas o que partilhas, o que permanece privado e quais os controlos ao teu alcance."
       note="Estamos a aperfeiçoar as informações sobre o tratamento e a conservação de dados pessoais. Para esclarecimentos ou pedidos relacionados com a tua privacidade, contacta-nos através de arquivoglobal.org@gmail.com."
@@ -176,6 +229,13 @@ export function PrivacyPage() {
           paragraphs: [
             "O Supabase processa autenticação, perfis e conteúdos guardados. Se escolheres iniciar sessão com Google, esse fornecedor também participa na autenticação. O serviço de fotografias utiliza Cloudflare Workers e R2 para receber e alojar imagens de perfil.",
             "A fotografia atual do perfil pode ser vista por visitantes. Substituir ou remover essa fotografia no perfil não significa que o ficheiro anterior seja imediatamente eliminado do armazenamento.",
+          ],
+        },
+        {
+          title: "Suporte, denúncias e comunicações",
+          paragraphs: [
+            "Pedidos de suporte e respetivas respostas ficam associados à conta e são acessíveis ao titular e às contas administrativas designadas. Inclui apenas os dados necessários; não envies passwords, tokens ou documentos pessoais desnecessários. Denúncias de comentários continuam também integradas nos serviços de moderação autorizados existentes.",
+            "Comunicados oficiais opcionais dependem da tua preferência nas notificações. Respostas a pedidos e decisões sobre processos relacionados contigo são mensagens de serviço. As operações administrativas produzem registos de auditoria; as contagens do painel são agregadas e não apresentam emails, passwords ou textos de rascunhos.",
           ],
         },
         {
@@ -285,6 +345,11 @@ export function HelpPage() {
       title="Central de Ajuda"
       description="Respostas simples para começares a ler, criar e partilhar."
     >
+      <p>
+        <Link to="/suporte">Enviar e acompanhar um pedido de suporte</Link> ·{" "}
+        <Link to="/denunciar">Denunciar conteúdo</Link> ·{" "}
+        <Link to="/transparencia">Consultar avisos publicados</Link>
+      </p>
       <InstitutionalNav />
       <div className="completion-quick-links">
         {[
@@ -387,5 +452,93 @@ export function ContactPage() {
         </p>
       </aside>
     </CompletionPage>
+  );
+}
+
+export function TermsPage() {
+  return (
+    <DocumentPage
+      policySlug="termos"
+      title="Termos de Utilização"
+      description="Proposta de condições de utilização, sujeita a revisão e aprovação expressas."
+      sections={[
+        {
+          title: "Âmbito da proposta",
+          paragraphs: [
+            "Esta minuta descreve a utilização da plataforma para criar, guardar e publicar obras e participar nas áreas públicas. A identificação jurídica do responsável, a elegibilidade, a jurisdição e outras condições aplicáveis precisam de revisão humana antes de aprovação. Não se presume um regime legal específico.",
+          ],
+        },
+        {
+          title: "Conta, conteúdos e interações",
+          paragraphs: [
+            "Protege o acesso à conta e utiliza os controlos do Estúdio para decidir o que publicar. Rascunhos e listas pessoais não se tornam públicos por uma interação social. Respeita a autoria e as regras comunitárias; esta minuta não concede uma licença adicional sobre obras de terceiros.",
+          ],
+        },
+        {
+          title: "Publicação, disponibilidade e revisão",
+          paragraphs: [
+            "A versão pública é a edição confirmada pelo autor, sujeita às decisões de moderação registadas. É possível retirar publicações e pedir suporte ou revisão de uma decisão. Não se promete disponibilidade ininterrupta, resultado de análise ou prazo de resposta. As informações definitivas dependem de autorização institucional e revisão jurídica.",
+          ],
+        },
+      ]}
+    />
+  );
+}
+export function CopyrightPage() {
+  return (
+    <DocumentPage
+      policySlug="direitos-autor"
+      title="Direitos de Autor"
+      description="Comunicar alegações de autoria e pedidos relacionados com conteúdos."
+      sections={[
+        {
+          title: "Como apresentar um pedido",
+          paragraphs: [
+            "Usa o suporte na categoria Direitos de Autor ou a denúncia do conteúdo público. Identifica a ligação da obra, perfil ou comentário e descreve o material e a tua relação com a alegação. Fornece apenas os elementos necessários; não envies dados confidenciais indiscriminadamente.",
+          ],
+        },
+        {
+          title: "Análise administrativa",
+          paragraphs: [
+            "Os responsáveis podem analisar o conteúdo e os esclarecimentos fornecidos, classificar o pedido e registar uma decisão. As respostas ficam no processo privado e nas notificações das partes autorizadas. Este fluxo não é apresentado como um procedimento legal específico nem promete remoção automática ou um prazo.",
+          ],
+        },
+        {
+          title: "Contestação e limites",
+          paragraphs: [
+            "Uma pessoa afetada pode pedir revisão pelo suporte, associando o processo recebido. Esta minuta exige revisão jurídica, incluindo quais informações são adequadas e quais obrigações realmente se aplicam. Até essa revisão, não se anunciam requisitos legais, garantias ou prazos inventados.",
+          ],
+        },
+      ]}
+    />
+  );
+}
+export function AppealsPage() {
+  return (
+    <DocumentPage
+      policySlug="contestacao"
+      title="Contestação de moderação"
+      description="Pedir revisão de uma decisão administrativa através de um processo acompanhado."
+      sections={[
+        {
+          title: "Apresentar uma contestação",
+          paragraphs: [
+            "Abre o suporte na categoria Contestação de moderação. Se recebeste uma decisão, utiliza a ligação da notificação para associar o processo. Explica os fundamentos da discordância e os esclarecimentos relevantes, sem incluir credenciais ou dados pessoais desnecessários.",
+          ],
+        },
+        {
+          title: "Acompanhamento e decisão",
+          paragraphs: [
+            "O suporte mostra o estado e permite trocar mensagens com a administração. A associação a um processo só é aceite para as partes autorizadas. Decisões de restrição e restauro são registadas; uma restrição administrativa de publicação não pode ser contornada por uma nova publicação do autor.",
+          ],
+        },
+        {
+          title: "Revisão humana necessária",
+          paragraphs: [
+            "Este é um procedimento operacional proposto, não a declaração de um direito, garantia de resultado ou prazo legal específico. A política definitiva de contestação precisa de aprovação institucional e revisão jurídica antes de ser apresentada como aprovada.",
+          ],
+        },
+      ]}
+    />
   );
 }

@@ -77,6 +77,12 @@ export const productRoutes: RouteDefinition[] = [
   ]),
   ...group("public", [
     ["/denunciar", "Denunciar conteúdo"],
+    ["/suporte", "Suporte"],
+    ["/termos", "Termos de Utilização"],
+    ["/direitos-autor", "Direitos de Autor"],
+    ["/contestacao", "Contestação de moderação"],
+    ["/transparencia", "Transparência"],
+    ["/campanhas", "Campanhas"],
     ["/ajuda", "Central de Ajuda"],
     ["/contacto", "Contacto Institucional"],
     ["/regras", "Regras da comunidade"],

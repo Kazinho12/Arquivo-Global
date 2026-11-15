@@ -211,7 +211,31 @@ const studioPages = {
     })),
   ),
 };
+const AdminPage = lazy(() => import("../features/center/AdminPage"));
 const completionPages = {
+  "/suporte": lazy(() =>
+    import("../pages/Communication").then((m) => ({ default: m.SupportPage })),
+  ),
+  "/campanhas": lazy(() =>
+    import("../features/center/PublicCenter").then((m) => ({
+      default: () => <m.PublicCenterPage />,
+    })),
+  ),
+  "/transparencia": lazy(() =>
+    import("../features/center/PublicCenter").then((m) => ({
+      default: () => <m.PublicCenterPage kind="status" />,
+    })),
+  ),
+  "/termos": lazy(() =>
+    import("../pages/Information").then((m) => ({ default: m.TermsPage })),
+  ),
+  "/direitos-autor": lazy(() =>
+    import("../pages/Information").then((m) => ({ default: m.CopyrightPage })),
+  ),
+  "/contestacao": lazy(() =>
+    import("../pages/Information").then((m) => ({ default: m.AppealsPage })),
+  ),
+
   "/contacto": lazy(() =>
     import("../pages/Information").then((module) => ({
       default: module.ContactPage,
@@ -376,6 +400,9 @@ export function ApplicationRoutes() {
     >
       <RouteEffects />
       <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
         {Object.entries(layouts).map(([name, Layout]) => (
           <Route key={name} element={<Layout />}>
             {productRoutes

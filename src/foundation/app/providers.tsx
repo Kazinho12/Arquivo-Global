@@ -1,3 +1,4 @@
+import { AdminSessionBridge } from "../features/center/AdminSessionBridge";
 import { RemoteWorksProvider } from "../features/studio/RemoteWorksProvider";
 import { PreferenceEffects } from "../features/preferences/store";
 import { LocalDataBoundary } from "../features/local/LocalDataBoundary";
@@ -59,6 +60,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ToastContext.Provider value={setMessage}>
         <PreferenceEffects />
         <AuthProvider>
+          <AdminSessionBridge />
           <LocalDataBoundary>
             <RemoteWorksProvider>{children}</RemoteWorksProvider>
           </LocalDataBoundary>

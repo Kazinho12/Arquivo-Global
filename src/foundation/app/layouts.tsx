@@ -124,11 +124,17 @@ function Footer() {
           <Link to="/registar">Criar conta</Link>
           <Link to="/estudio">Estúdio de criação</Link>
           <Link to="/ajuda">Central de Ajuda</Link>
+          <Link to="/suporte">Suporte</Link>
+          <Link to="/campanhas">Campanhas</Link>
         </div>
         <div>
           <span className="eyebrow">ARQUIVO GLOBAL</span>
           <Link to="/regras">Regras da comunidade</Link>
           <Link to="/privacidade">Privacidade</Link>
+          <Link to="/termos">Termos de Utilização</Link>
+          <Link to="/direitos-autor">Direitos de Autor</Link>
+          <Link to="/contestacao">Revisão de moderação</Link>
+          <Link to="/transparencia">Transparência</Link>
           <Link to="/contacto">Contacto Institucional</Link>
           <a href="mailto:arquivoglobal.org@gmail.com">
             arquivoglobal.org@gmail.com

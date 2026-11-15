@@ -5,6 +5,10 @@
     },
     "api/social-metrics.ts": {
       "maxDuration": 10
+    },
+    "api/admin.ts": {
+      "maxDuration": 30,
+      "includeFiles": "dist/index.html"
     }
   },
   "rewrites": [
@@ -15,6 +19,14 @@
     {
       "source": "/sitemaps/:file",
       "destination": "/api/sitemap?file=:file"
+    },
+    {
+      "source": "/admin",
+      "destination": "/api/admin?resource=page"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/api/admin?resource=missing"
     },
     {
       "source": "/((?!api/|assets/|sitemaps/|sitemap\\.xml$|robots\\.txt$|favicon|google[^/]*\\.html$).*)",
@@ -28,6 +40,19 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }

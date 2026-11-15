@@ -195,6 +195,11 @@ export function PublicProfilePage() {
         </div>
       </header>
       <AuthorFollow id={profile.id} />
+      <p>
+        <Link to={`/denunciar?tipo=profile&id=${profile.id}`}>
+          Denunciar este perfil
+        </Link>
+      </p>
 
       <ProfilePublications key={profile.id} id={profile.id} />
     </div>

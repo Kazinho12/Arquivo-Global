@@ -281,3 +281,38 @@ test("publication state errors distinguish archive, visual activation, upload an
     );
   }
 });
+
+test("administrative restriction is explained without invalidating a valid author session", async () => {
+  const client = {
+    auth: {
+      getSession: async () => ({
+        data: { session: { access_token: "fixture" } },
+        error: null,
+      }),
+      getUser: async () => ({ data: { user: { id } }, error: null }),
+    },
+    rpc: () => ({
+      setHeader() {
+        return this;
+      },
+      then(resolve: any) {
+        return Promise.resolve(
+          resolve({
+            data: null,
+            error: {
+              code: "42501",
+              message: "Publication restricted by administration",
+            },
+          }),
+        );
+      },
+    }),
+  } as any;
+  await assert.rejects(
+    createWorksRepository(client, id).editorial!(
+      { id, ownerId: id, persistence: "supabase", revision: 1 } as any,
+      "publish",
+    ),
+    /restringida por decisão administrativa/,
+  );
+});

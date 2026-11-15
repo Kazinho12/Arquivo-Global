@@ -155,6 +155,11 @@ export function PublishedWorkPage() {
           </section>
         </div>
       </article>
+      <p>
+        <Link to={`/denunciar?tipo=work&id=${work.id}`}>
+          Denunciar esta obra
+        </Link>
+      </p>
       <SocialPanel workId={work.id} />
     </div>
   );

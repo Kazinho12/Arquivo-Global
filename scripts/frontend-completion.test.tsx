@@ -16,7 +16,7 @@ const pages = [
   ["/atividade", "Histórias em movimento"],
   ["/colecoes", "Coleções que abrem caminhos"],
   ["/notificacoes", "Notificações"],
-  ["/denunciar", "Sinalizar um problema"],
+  ["/denunciar", "Denunciar conteúdo"],
   ["/ajuda", "Central de Ajuda"],
   ["/contacto", "Contacto Institucional"],
   ["/regras", "Regras da Comunidade"],
@@ -164,7 +164,7 @@ test("D/E: loading, errors, empty and denied states hide content appropriately",
   assert.equal(filterText("Coleções de poesia", "colecoes"), true);
 });
 
-test("institutional: official contact has encoded subjects and reports retain their limitation", async () => {
+test("institutional: official contact remains available and reports require authenticated ownership", async () => {
   const contact = await renderRoute("/contacto");
   assert.ok(
     contact.includes(
@@ -173,10 +173,7 @@ test("institutional: official contact has encoded subjects and reports retain th
   );
   assert.ok(contact.includes("Direitos de autor"));
   const report = await renderRoute("/denunciar");
-  assert.ok(report.includes("O formulário abaixo não envia pedidos"));
-  assert.ok(
-    report.includes(
-      "mailto:arquivoglobal.org@gmail.com?subject=Den%C3%BAncias%20de%20conte%C3%BAdo",
-    ),
-  );
+  assert.ok(report.includes("Inicia sessão"));
+  assert.ok(report.includes('href="/contacto"'));
+  assert.ok(!report.includes("O formulário abaixo não envia pedidos"));
 });
