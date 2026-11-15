@@ -1,3 +1,4 @@
+import { publicVisualReaderEnabled } from "../visual/public";
 import { entryText } from "../writing/document";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -7,17 +8,20 @@ import type { StudioWork } from "./types";
 export function PublicationControls({
   work,
   dirty,
+  visualPublicationEnabled = publicVisualReaderEnabled,
 }: {
   work: StudioWork;
   dirty: boolean;
+  visualPublicationEnabled?: boolean;
 }) {
   const remote = useRemoteWorks();
   const [action, setAction] = useState<"publish" | "withdraw" | null>(null);
   const [error, setError] = useState("");
   const published = work.status === "published";
-  const visualPending =
+  const visualModel =
     Boolean(work.visualSettings) ||
     work.chapters.some((c) => Boolean(c.visualPages?.length));
+  const visualPending = visualModel && !visualPublicationEnabled;
   const label = published
     ? "Atualizar publicação"
     : work.firstPublishedAt
@@ -29,7 +33,11 @@ export function PublicationControls({
     work.synopsis.trim().toLowerCase() !== "sem sinopse definida." &&
     work.language.trim() &&
     work.chapters.some(
-      (entry) => entry.title.trim() && entryText(entry.content ?? "").trim(),
+      (entry) =>
+        entry.title.trim() &&
+        (visualModel
+          ? visualPublicationEnabled && Boolean(entry.visualPages?.length)
+          : entryText(entry.content ?? "").trim()),
     );
   async function confirm() {
     if (!action) return;
@@ -87,8 +95,9 @@ export function PublicationControls({
         </p>
       )}
       <p>
-        Apenas entradas com texto válido serão publicadas. Entradas vazias
-        continuam privadas.
+        {visualModel
+          ? "Apenas capítulos com imagens guardadas serão publicados. Guiões e notas permanecem privados. Alterações futuras exigem nova confirmação de publicação."
+          : "Apenas entradas com texto válido serão publicadas. Entradas vazias continuam privadas."}
       </p>
       {Boolean(work.archivedAt) && <p>Desarquiva a obra antes de publicar.</p>}
       {visualPending && (
@@ -100,8 +109,8 @@ export function PublicationControls({
       )}
       {!valid && (
         <p>
-          Preenche título, sinopse, idioma e pelo menos uma entrada com texto
-          antes de publicar.
+          Preenche título, sinopse, idioma e pelo menos uma entrada com{" "}
+          {visualModel ? "imagens guardadas" : "texto"} antes de publicar.
         </p>
       )}
       <div className="actions">

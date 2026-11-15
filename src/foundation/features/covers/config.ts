@@ -4,6 +4,7 @@ export const coverStylePersistenceEnabled =
 export interface CoverStyleOptions {
   customCoversEnabled?: boolean;
   visualEditorEnabled?: boolean;
+  publicVisualReaderEnabled?: boolean;
   coverStyleEnabled?: boolean;
   coverStudioV2Enabled?: boolean;
 }

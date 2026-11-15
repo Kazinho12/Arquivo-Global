@@ -1,3 +1,5 @@
+import { PublicVisualReader } from "../visual/PublicVisualReader";
+import { publicVisualReaderEnabled } from "../visual/public";
 import { usePublicationSeo } from "../seo/usePublicationSeo";
 import { useLibrary } from "../library/store";
 import { resumeChapter } from "../reader/progress";
@@ -99,7 +101,7 @@ export function PublishedWorkPage() {
           {work.contentWarnings.length > 0 && (
             <p>Avisos de conteúdo: {work.contentWarnings.join(", ")}</p>
           )}
-          {visual && (
+          {visual && !work.hasVisualPublication && (
             <p className="notice">
               Publicação do guião textual. Esta edição não contém páginas de
               imagens.
@@ -132,9 +134,13 @@ export function PublishedWorkPage() {
             <h2>
               {work.format === "Poesia"
                 ? "Poemas publicados"
-                : visual
-                  ? "Guião publicado"
-                  : "Capítulos publicados"}
+                : work.hasVisualPublication
+                  ? work.visualSettings?.format === "webtoon"
+                    ? "Episódios publicados"
+                    : "Capítulos visuais publicados"
+                  : visual
+                    ? "Guião publicado"
+                    : "Capítulos publicados"}
             </h2>
             <ol>
               {work.chapters.map((entry) => (
@@ -171,6 +177,22 @@ export function PublishedReaderPage() {
   const work = state.work;
   const chapter = work?.chapters.find((entry) => entry.id === capituloId);
   if (!work || !chapter) return <NotFound />;
+  if (work.hasVisualPublication) {
+    if (!publicVisualReaderEnabled || !work.visualSettings)
+      return (
+        <section className="container">
+          <h1>Leitura visual indisponível neste ambiente</h1>
+          <Link to={`/obras/${work.id}`}>Voltar à obra</Link>
+        </section>
+      );
+    return (
+      <PublicVisualReader
+        key={`${id}:${capituloId}:${work.lastPublishedAt}`}
+        work={work}
+        chapter={chapter}
+      />
+    );
+  }
   const props = {
     workId: work.id,
     workTitle: work.title,

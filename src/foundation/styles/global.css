@@ -6921,3 +6921,133 @@ dialog p {
     white-space: normal;
   }
 }
+
+/* F4.2-C: public snapshots only; local reading theme never changes the app theme. */
+.public-visual-reader {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: clamp(12px, 3vw, 32px);
+}
+.public-visual-reader[data-reading-theme="light"] {
+  --bg: #f4f6f8;
+  --surface: #fff;
+  --text: #15273a;
+  --muted: #4e647b;
+  --border: #cbd6e1;
+  --accent: #1e4566;
+  --accent-ink: #fff;
+  --elevated: #e7edf3;
+  --focus: #1264a4;
+  --error: #a41f36;
+  color-scheme: light;
+}
+.public-visual-reader[data-reading-theme="dark"] {
+  --bg: #0b1524;
+  --surface: #101e30;
+  --text: #e9eef5;
+  --muted: #a7b7ca;
+  --border: #293c52;
+  --accent: #c3d9ed;
+  --accent-ink: #102338;
+  --elevated: #192b40;
+  --focus: #87c5ff;
+  --error: #ffb5b9;
+  color-scheme: dark;
+}
+.public-visual-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.public-visual-toolbar {
+  max-width: 1100px;
+  margin: 0 auto 24px;
+}
+.public-visual-toolbar h1 {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  overflow-wrap: anywhere;
+}
+.public-visual-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.public-visual-controls .field {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+.public-visual-toolbar progress {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+}
+.public-visual-canvas {
+  overflow: auto;
+  max-width: 100%;
+  outline-offset: 3px;
+}
+.public-visual-image {
+  position: relative;
+  display: block;
+  margin: 0 auto;
+  min-width: 0;
+  background: var(--surface);
+  width: calc(min(100%, 1000px) * var(--visual-zoom, 1));
+}
+.public-visual-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  max-width: none;
+}
+.public-visual-canvas.fit-height .public-visual-image {
+  width: auto;
+  height: calc(80svh * var(--visual-zoom, 1));
+  max-width: none;
+}
+.public-visual-image-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: var(--surface);
+  overflow: auto;
+  text-align: center;
+}
+.public-visual-reader[data-mode="vertical"] .public-visual-image {
+  margin-block: 0;
+}
+.public-visual-preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.public-visual-chapter-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: 32px auto;
+  max-width: 1100px;
+}
+@media (max-width: 600px) {
+  .public-visual-reader {
+    padding: 12px;
+  }
+  .public-visual-controls .button {
+    min-height: 44px;
+  }
+  .public-visual-image-error {
+    font-size: 0.85rem;
+  }
+}

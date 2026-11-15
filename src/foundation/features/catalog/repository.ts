@@ -1,3 +1,5 @@
+import { publicVisualReaderEnabled } from "../visual/public";
+import { readVisualSettings, type VisualSettings } from "../visual/types";
 import { customCoversEnabled, readCoverImage } from "../media/covers";
 import {
   coverStylePersistenceEnabled,
@@ -27,6 +29,8 @@ export interface PublishedWork extends Work {
   firstPublishedAt: string;
   lastPublishedAt: string;
   chapters: Chapter[];
+  visualSettings?: VisualSettings;
+  hasVisualPublication?: boolean;
 }
 export interface PublicWorksRepository {
   list(): Promise<Work[]>;
@@ -59,6 +63,7 @@ function mapPublishedRow(
   styleEnabled: boolean,
   v2Enabled = false,
   imagesEnabled = customCoversEnabled,
+  visualEnabled = publicVisualReaderEnabled,
 ): PublishedWork {
   if (
     !row.id ||
@@ -94,6 +99,10 @@ function mapPublishedRow(
     contentWarnings: row.content_warnings,
     firstPublishedAt: row.first_published_at,
     lastPublishedAt: row.last_published_at,
+    hasVisualPublication: row.visual_settings != null,
+    ...(visualEnabled
+      ? { visualSettings: readVisualSettings(row.visual_settings) }
+      : {}),
     chapters: (row.entries ?? []).map((entry: Record<string, any>) => ({
       id: entry.id,
       title: entry.title,
@@ -101,6 +110,15 @@ function mapPublishedRow(
       content: entry.content,
       entryType: entry.entry_type,
       alignment: entry.alignment,
+      ...(visualEnabled
+        ? {
+            publicVisualPageCount:
+              Number.isSafeInteger(entry.visual_page_count) &&
+              entry.visual_page_count >= 0
+                ? entry.visual_page_count
+                : 0,
+          }
+        : {}),
       ...(entry.entry_type === "poem"
         ? {
             stanzas: entry.content
@@ -115,6 +133,8 @@ export function createPublicWorksRepository(
   client: SupabaseClient | null,
   options: CoverStyleOptions = {},
 ): PublicWorksRepository {
+  const visualEnabled =
+    options.publicVisualReaderEnabled ?? publicVisualReaderEnabled;
   const imagesEnabled = options.customCoversEnabled ?? customCoversEnabled;
   const styleEnabled =
     options.coverStyleEnabled ?? coverStylePersistenceEnabled;
@@ -155,7 +175,13 @@ export function createPublicWorksRepository(
           .limit(12),
       );
       return (rows ?? []).map((row) =>
-        mapPublishedRow(row, styleEnabled, v2Enabled, imagesEnabled),
+        mapPublishedRow(
+          row,
+          styleEnabled,
+          v2Enabled,
+          imagesEnabled,
+          visualEnabled,
+        ),
       );
     },
     async search(query) {
@@ -171,7 +197,13 @@ export function createPublicWorksRepository(
       return {
         ...result,
         items: result.items.map((row: Record<string, any>) =>
-          mapPublishedRow(row, styleEnabled, v2Enabled, imagesEnabled),
+          mapPublishedRow(
+            row,
+            styleEnabled,
+            v2Enabled,
+            imagesEnabled,
+            visualEnabled,
+          ),
         ),
       } as DiscoveryPage;
     },
@@ -206,7 +238,13 @@ export function createPublicWorksRepository(
         db().rpc("read_public_work", { p_public_id: publicId }),
       );
       return row
-        ? mapPublishedRow(row, styleEnabled, v2Enabled, imagesEnabled)
+        ? mapPublishedRow(
+            row,
+            styleEnabled,
+            v2Enabled,
+            imagesEnabled,
+            visualEnabled,
+          )
         : null;
     },
   };
