@@ -1,3 +1,5 @@
+import { AuthorAnalytics } from "../features/notifications/AuthorAnalytics";
+import { notificationsAnalyticsEnabled } from "../features/notifications/repository";
 import { VisualChapterEditor } from "../features/visual/VisualChapterEditor";
 import { visualEditorEnabled } from "../features/visual/types";
 import { CustomCover } from "../features/media/CustomCover";
@@ -2014,7 +2016,7 @@ export function PublicationsPage() {
 // ============================================================================
 // 7. Author Statistics: /estudio/estatisticas
 // ============================================================================
-export function StudioStatsPage() {
+function LocalStudioStatsPage() {
   const { stats, activeWorks: works } = useStudio();
 
   return (
@@ -2258,5 +2260,13 @@ export function MediaLibraryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export function StudioStatsPage() {
+  return notificationsAnalyticsEnabled ? (
+    <AuthorAnalytics />
+  ) : (
+    <LocalStudioStatsPage />
   );
 }

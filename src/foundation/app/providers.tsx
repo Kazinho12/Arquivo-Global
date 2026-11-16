@@ -1,3 +1,4 @@
+import { NotificationCountProvider } from "../features/notifications/Notifications";
 import { ReadingProvider } from "../features/library/ReadingProvider";
 import { AdminSessionBridge } from "../features/center/AdminSessionBridge";
 import { RemoteWorksProvider } from "../features/studio/RemoteWorksProvider";
@@ -63,9 +64,11 @@ export function Providers({ children }: { children: ReactNode }) {
         <AuthProvider>
           <AdminSessionBridge />
           <LocalDataBoundary>
-            <ReadingProvider>
-              <RemoteWorksProvider>{children}</RemoteWorksProvider>
-            </ReadingProvider>
+            <NotificationCountProvider>
+              <ReadingProvider>
+                <RemoteWorksProvider>{children}</RemoteWorksProvider>
+              </ReadingProvider>
+            </NotificationCountProvider>
           </LocalDataBoundary>
         </AuthProvider>
         <div className="toast-region" role="status" aria-live="polite">

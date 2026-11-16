@@ -7238,3 +7238,85 @@ dialog p {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
+
+.notification-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.notification-preferences {
+  padding: 1rem;
+  margin-block: 1rem;
+}
+.notification-preferences label {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-block: 0.7rem;
+}
+.notification-page {
+  padding-block: 2rem;
+}
+.notification-page .actions {
+  flex-wrap: wrap;
+}
+.notification-unread {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+}
+.analytics-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.analytics-totals div {
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 1rem;
+  background: var(--surface);
+}
+.analytics-totals dd {
+  margin: 0.5rem 0 0;
+  font-size: 1.6rem;
+}
+.analytics-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: 1rem;
+}
+.analytics-table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.analytics-table-scroll th,
+.analytics-table-scroll td {
+  text-align: left;
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--border);
+}
+.analytics-chart {
+  display: block;
+  max-height: 220px;
+  width: 100%;
+  color: var(--accent);
+}
+.author-analytics .actions {
+  flex-wrap: wrap;
+}
+.author-analytics select,
+.notification-page select {
+  max-width: 100%;
+  min-width: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  padding: 0.6rem;
+}
+@media (max-width: 1024px) {
+  .notification-header-label {
+    display: none;
+  }
+}

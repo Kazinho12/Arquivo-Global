@@ -1,3 +1,4 @@
+import { NotificationHeader } from "../features/notifications/Notifications";
 import { QuickSearch } from "../features/catalog/QuickSearch";
 import { LocalDataTools } from "../features/local/LocalDataTools";
 import { AuthHeaderLinks } from "../features/auth/components";
@@ -47,6 +48,7 @@ function Header() {
           </nav>
           <div className="header-actions">
             <QuickSearch />
+            <NotificationHeader />
             <Button
               variant="ghost"
               onClick={toggle}

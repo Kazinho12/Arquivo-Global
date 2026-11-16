@@ -1,3 +1,5 @@
+import { NotificationDiagnostics } from "../notifications/AuthorAnalytics";
+import { notificationsAnalyticsEnabled } from "../notifications/repository";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { NotFound } from "../../pages/States";
@@ -900,6 +902,7 @@ function AdminContent({
           Carregar mais registos
         </Button>
       )}
+      {notificationsAnalyticsEnabled && <NotificationDiagnostics />}
     </div>
   );
 }

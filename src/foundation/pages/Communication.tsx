@@ -1,6 +1,12 @@
+import { NotificationInbox } from "../features/notifications/Notifications";
+import { notificationsAnalyticsEnabled } from "../features/notifications/repository";
 import { MemberCenter } from "../features/center/MemberCenter";
 export function NotificationsPage() {
-  return <MemberCenter mode="notifications" />;
+  return notificationsAnalyticsEnabled ? (
+    <NotificationInbox />
+  ) : (
+    <MemberCenter mode="notifications" />
+  );
 }
 export function ReportPage() {
   return <MemberCenter mode="reports" />;
