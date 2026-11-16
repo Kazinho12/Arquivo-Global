@@ -1,3 +1,4 @@
+import { Languages } from "lucide-react";
 import { useCanonicalProfile } from "../features/profile/cache";
 import {
   usePreferences,
@@ -106,6 +107,17 @@ export function SettingsOverviewPage() {
       </div>
 
       <div className="settings-grid">
+        <Link to="/definicoes/idioma" className="settings-nav-card">
+          <Languages size={22} />
+          <div>
+            <h3>Idioma e Região</h3>
+            <p>
+              Escolhe o teu país, idioma da interface e preferências
+              linguísticas de leitura.
+            </p>
+          </div>
+          <ArrowRight size={18} />
+        </Link>
         <Link to="/definicoes/aparencia" className="settings-nav-card">
           <div className="settings-icon">
             {theme === "dark" ? <Moon size={22} /> : <Sun size={22} />}

@@ -1,3 +1,4 @@
+import { useI18n } from "../features/personalization/PersonalizationProvider";
 import { NotificationHeader } from "../features/notifications/Notifications";
 import { QuickSearch } from "../features/catalog/QuickSearch";
 import { LocalDataTools } from "../features/local/LocalDataTools";
@@ -28,6 +29,7 @@ const publicLinks = [
 ];
 function Header() {
   const { theme, toggle } = useTheme();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   useEffect(() => setOpen(false), [location.pathname, location.search]);
@@ -42,7 +44,16 @@ function Header() {
           <nav className="desktop-nav" aria-label="Navegação principal">
             {publicLinks.map(([to, label]) => (
               <NavLink key={to} to={to}>
-                {label}
+                {t(
+                  (
+                    {
+                      Explorar: "explore",
+                      Catálogo: "catalog",
+                      Categorias: "categories",
+                      Tendências: "trending",
+                    } as any
+                  )[label],
+                )}
               </NavLink>
             ))}
           </nav>
@@ -254,6 +265,7 @@ export function AccountLayout() {
         ["/notificacoes", "Notificações"],
         ["/definicoes", "Definições"],
         ["/definicoes/aparencia", "Aparência"],
+        ["/definicoes/idioma", "Idioma e Região"],
         ["/definicoes/acessibilidade", "Acessibilidade"],
       ]}
     />

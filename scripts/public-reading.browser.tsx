@@ -597,15 +597,23 @@ await run(
     await drive({ kind: "screenshot", label: "f32-poetry-mobile" });
   },
 );
-await run("F3.2: inaugural prose and poetry remain readable", async () => {
-  await mount("/obras/ag-carta-abertura/capitulos/cap-1");
-  check(
-    fixture.textContent?.includes("Uma porta entreaberta"),
-    "Prosa inaugural perdida",
-  );
-  await mount("/obras/ag-primeiras-linhas/capitulos/cap-1");
-  check(fixture.querySelector(".poetry-verse"), "Poesia inaugural perdida");
-});
+await run(
+  "F3.2: removed demonstration URLs never expose fictional content",
+  async () => {
+    await mount("/obras/ag-carta-abertura/capitulos/cap-1");
+    check(
+      fixture.textContent?.includes("404") &&
+        !fixture.textContent?.includes("Uma porta entreaberta"),
+      "Obra fictícia voltou a ser acessível",
+    );
+    await mount("/obras/ag-primeiras-linhas/capitulos/cap-1");
+    check(
+      fixture.textContent?.includes("404") &&
+        !fixture.querySelector(".poetry-verse"),
+      "Poesia fictícia voltou a ser acessível",
+    );
+  },
+);
 await act(async () => root.unmount());
 document.getElementById("results")!.textContent = JSON.stringify(results);
 document.documentElement.dataset.tests = results.every((r) => r.ok)

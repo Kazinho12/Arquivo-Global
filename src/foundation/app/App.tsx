@@ -1,3 +1,4 @@
+import { PersonalizationEffects } from "../features/personalization/PersonalizationProvider";
 import { DISCOVERY_PAGES } from "../features/seo/config";
 import { applySeo, routeSeo } from "../features/seo/metadata";
 import {
@@ -94,10 +95,17 @@ const settingsPages = {
       default: module.SettingsOverviewPage,
     })),
   ),
-  "/definicoes/aparencia": lazy(() =>
-    import("../pages/Settings").then((module) => ({
-      default: module.SettingsAppearancePage,
-    })),
+  "/definicoes/aparencia": lazy(
+    () => import("../features/personalization/AppearancePage"),
+  ),
+  "/definicoes/aparencia/estudio": lazy(
+    () => import("../features/personalization/ChromaticStudio"),
+  ),
+  "/definicoes/aparencia/recuperar": lazy(
+    () => import("../features/personalization/RecoveryPage"),
+  ),
+  "/definicoes/idioma": lazy(
+    () => import("../features/personalization/LanguagePage"),
   ),
   "/definicoes/leitura": lazy(() =>
     import("../pages/Settings").then((module) => ({
@@ -427,6 +435,7 @@ export function App() {
   return (
     <Providers>
       <BrowserRouter>
+        <PersonalizationEffects />
         <PublicCatalogProvider>
           <ApplicationRoutes />
         </PublicCatalogProvider>

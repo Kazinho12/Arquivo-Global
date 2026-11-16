@@ -119,8 +119,14 @@ test("AG-11/14: lookup exato com underscore e associação apenas por ID estáve
   ];
   // Associação deve ser estritamente por ID estável (authorId), nunca por display_name
   assert.equal(findAuthorWorks("real-author", isolatedWorks).length, 1);
-  assert.equal(findAuthorWorks("real-author", isolatedWorks)[0].id, "w-isolated-1");
-  assert.deepEqual(findAuthorWorks("Arquivo Global — Equipa Editorial", isolatedWorks), []);
+  assert.equal(
+    findAuthorWorks("real-author", isolatedWorks)[0].id,
+    "w-isolated-1",
+  );
+  assert.deepEqual(
+    findAuthorWorks("Arquivo Global — Equipa Editorial", isolatedWorks),
+    [],
+  );
   assert.deepEqual(findAuthorWorks("outro-autor", isolatedWorks), []);
   // Sem dataset explícito, catálogo de produção não possui obras fictícias
   assert.deepEqual(findAuthorWorks("ag-editorial-team"), []);
