@@ -1,0 +1,45 @@
+name: Process notifications
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: process-notifications
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check required secret
+        shell: bash
+        env:
+          SOCIAL_METRICS_SECRET: ${{ secrets.SOCIAL_METRICS_SECRET }}
+        run: |
+          if [ -z "${SOCIAL_METRICS_SECRET:-}" ]; then
+            echo "::error::SOCIAL_METRICS_SECRET não está configurado nos secrets do repositório."
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Process notification batch
+        env:
+          AG_SITE_URL: https://arquivoglobal.vercel.app
+          SOCIAL_METRICS_SECRET: ${{ secrets.SOCIAL_METRICS_SECRET }}
+        run: node scripts/process-notifications.mjs
